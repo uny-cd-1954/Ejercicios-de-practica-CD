@@ -1,0 +1,664 @@
+<!-- Carga de MathJax para renderizar fórmulas matemáticas en Moodle -->
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<style>
+    .math-app-container {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        max-width: 700px;
+        margin: 20px auto;
+        padding: 25px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        background-color: #fcfdfd;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .math-header {
+        text-align: center;
+        color: #2c3e50;
+        border-bottom: 2px solid #8e44ad;
+        padding-bottom: 10px;
+        margin-bottom: 20px;
+    }
+    .math-topic-badge {
+        display: inline-block;
+        background-color: #f4ecf8;
+        color: #8e44ad;
+        padding: 5px 12px;
+        border-radius: 15px;
+        font-size: 0.85em;
+        font-weight: bold;
+        margin-bottom: 15px;
+    }
+    .math-question {
+        font-size: 1.1em;
+        color: #333;
+        margin-bottom: 20px;
+        line-height: 1.6;
+    }
+    .math-input-group {
+        margin-bottom: 20px;
+    }
+    .math-input-group input {
+        padding: 10px;
+        font-size: 1em;
+        width: 60%;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+    }
+    .math-btn {
+        padding: 10px 15px;
+        font-size: 1em;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        margin-right: 5px;
+        margin-bottom: 5px;
+        color: white;
+        transition: background 0.3s;
+    }
+    .btn-submit { background-color: #27ae60; }
+    .btn-submit:hover { background-color: #2ecc71; }
+    .btn-hint { background-color: #f39c12; }
+    .btn-hint:hover { background-color: #f1c40f; }
+    .btn-solution { background-color: #e74c3c; }
+    .btn-solution:hover { background-color: #c0392b; }
+    .btn-next { background-color: #2c3e50; width: 100%; margin-top: 20px; }
+    
+    .math-feedback {
+        margin-top: 15px;
+        padding: 15px;
+        border-radius: 5px;
+        display: none;
+    }
+    .feedback-correct { background-color: #d5f5e3; color: #145a32; border-left: 5px solid #27ae60; }
+    .feedback-incorrect { background-color: #fdedec; color: #78281f; border-left: 5px solid #e74c3c; }
+    .feedback-hint { background-color: #fef9e7; color: #7d6608; border-left: 5px solid #f1c40f; margin-top: 10px; }
+    .math-solution-box {
+        margin-top: 20px;
+        padding: 15px;
+        background-color: #fff;
+        border: 1px dashed #7f8c8d;
+        display: none;
+        overflow-x: auto;
+    }
+</style>
+
+<div class="math-app-container">
+    <div class="math-header">
+        <h2>Práctica: Límites y Continuidad</h2>
+    </div>
+    
+    <div id="topic-badge" class="math-topic-badge">Tema</div>
+    <div id="question-text" class="math-question">Cargando pregunta...</div>
+    
+    <div class="math-input-group">
+        <input type="text" id="student-answer" placeholder="Escribe tu respuesta aquí...">
+        <button class="math-btn btn-submit" onclick="checkAnswer()">Comprobar Respuesta</button>
+    </div>
+    
+    <div>
+        <button class="math-btn btn-hint" onclick="showHint()">Pedir Pista</button>
+        <button class="math-btn btn-solution" onclick="showSolution()">Mostrar Solución Paso a Paso</button>
+    </div>
+    
+    <div id="feedback-area" class="math-feedback"></div>
+    <div id="hint-area" class="math-feedback feedback-hint"></div>
+    <div id="solution-area" class="math-solution-box"></div>
+    
+    <button class="math-btn btn-next" onclick="loadNextQuestion()">Siguiente Ejercicio</button>
+</div>
+
+<script>
+    // Base de datos de ejercicios de la Unidad II (Sin alucinaciones)
+    // Todos los ejercicios (Lote 3 y Lote 4) unificados en un solo array
+    const questions = [
+        // --- EVALUACIÓN INTUITIVA Y TEOREMAS ---
+        {
+            topic: "Evaluación Directa",
+            text: "Evaluando mediante los teoremas de límites, calcula el valor exacto de: <br><br> \\( \\lim_{x \\to -2} (3x^2 - 4x + 1) \\)",
+            answers: ["21"],
+            hints: [
+                "Pista 1: Las funciones polinómicas son continuas en todos los números reales.",
+                "Pista 2: Por el teorema de sustitución directa para polinomios, simplemente evalúa la función en \\( x = -2 \\).",
+                "Pista 3: Ten cuidado con los signos al elevar al cuadrado: \\( (-2)^2 = 4 \\)."
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. Al ser un polinomio, aplicamos sustitución directa:<br>\\[ \\lim_{x \\to -2} (3x^2 - 4x + 1) = 3(-2)^2 - 4(-2) + 1 \\]<br>2. Resolvemos las potencias y multiplicaciones:<br>\\[ = 3(4) + 8 + 1 \\]<br>\\[ = 12 + 8 + 1 = 21 \\]"
+        },
+        {
+            topic: "Límites Laterales (Función a Trozos)",
+            text: "Dada la función definida a trozos: <br> \\( f(x) = \\begin{cases} x^2, & \\text{si } x < 1 \\\\ 3, & \\text{si } x = 1 \\\\ 2x - 1, & \\text{si } x > 1 \\end{cases} \\) <br> Encuentra el valor de \\( \\lim_{x \\to 1} f(x) \\). <br><small><em>(Si el límite no existe, escribe 'no existe' sin comillas)</em></small>",
+            answers: ["1"],
+            hints: [
+                "Pista 1: El límite existe si y solo si los límites laterales son iguales. El valor en \\( x = 1 \\) (que es 3) NO importa para el límite.",
+                "Pista 2: Calcula el límite por la izquierda (\\( x \\to 1^- \\)) usando \\( x^2 \\).",
+                "Pista 3: Calcula el límite por la derecha (\\( x \\to 1^+ \\)) usando \\( 2x - 1 \\). Compara ambos resultados."
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. Límite lateral izquierdo (valores menores que 1):<br>\\[ \\lim_{x \\to 1^-} f(x) = \\lim_{x \\to 1^-} (x^2) = (1)^2 = 1 \\]<br>2. Límite lateral derecho (valores mayores que 1):<br>\\[ \\lim_{x \\to 1^+} f(x) = \\lim_{x \\to 1^+} (2x - 1) = 2(1) - 1 = 1 \\]<br>3. Como los límites laterales existen y son iguales (\\( 1 = 1 \\)), el límite general de la función cuando \\( x \\to 1 \\) existe y es 1, independientemente de que \\( f(1) = 3 \\)."
+        },
+        {
+            topic: "Propiedades de los Límites",
+            text: "Si sabemos que \\( \\lim_{x \\to 5} f(x) = 4 \\) y \\( \\lim_{x \\to 5} g(x) = -2 \\), calcula el valor exacto de: <br><br> \\( \\lim_{x \\to 5} [f(x) - 3g(x)]^2 \\)",
+            answers: ["100"],
+            hints: [
+                "Pista 1: Usa las leyes de los límites para introducir el límite dentro del corchete y distribuirlo.",
+                "Pista 2: Se convierte en \\( [\\lim f(x) - 3\\lim g(x)]^2 \\).",
+                "Pista 3: Sustituye los valores dados: \\( [4 - 3(-2)]^2 \\) y resuelve la aritmética."
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. Aplicamos la ley de la potencia y la linealidad de los límites:<br>\\[ \\left[ \\lim_{x \\to 5} f(x) - 3 \\cdot \\lim_{x \\to 5} g(x) \\right]^2 \\]<br>2. Sustituimos los valores numéricos dados en la hipótesis:<br>\\[ [4 - 3(-2)]^2 \\]<br>3. Resolvemos el interior del corchete respetando la jerarquía:<br>\\[ [4 + 6]^2 = [10]^2 = 100 \\]"
+        },
+        {
+            topic: "Teorema de Estricción (Sándwich)",
+            text: "Para toda \\( x \\) en un intervalo alrededor de 2, se cumple la desigualdad: <br> \\( 3x - 1 \\leq f(x) \\leq x^2 - x + 3 \\). <br> Determina el valor exacto de \\( \\lim_{x \\to 2} f(x) \\).",
+            answers: ["5"],
+            hints: [
+                "Pista 1: El Teorema del Sándwich o Encaje establece que si una función está atrapada entre otras dos y ambas tienen el mismo límite en un punto, la función atrapada también lo tendrá.",
+                "Pista 2: Evalúa el límite de la función de la izquierda cuando \\( x \\to 2 \\).",
+                "Pista 3: Evalúa el límite de la función de la derecha cuando \\( x \\to 2 \\). ¿Dan el mismo resultado?"
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. Calculamos el límite de la cota inferior:<br>\\[ \\lim_{x \\to 2} (3x - 1) = 3(2) - 1 = 6 - 1 = 5 \\]<br>2. Calculamos el límite de la cota superior:<br>\\[ \\lim_{x \\to 2} (x^2 - x + 3) = (2)^2 - 2 + 3 = 4 - 2 + 3 = 5 \\]<br>3. Ya que \\( 5 \\leq \\lim_{x \\to 2} f(x) \\leq 5 \\), por el Teorema de Estricción (Sándwich), concluimos que:<br>\\[ \\lim_{x \\to 2} f(x) = 5 \\]"
+        },
+
+        // --- DEFINICIÓN FORMAL ÉPSILON-DELTA ---
+        {
+            topic: "Definición Formal de Límite (Épsilon-Delta)",
+            text: "Se afirma que \\( \\lim_{x \\to 3} (2x - 1) = 5 \\). Dado un \\( \\epsilon = 0.1 \\), determina el mayor valor posible para \\( \\delta > 0 \\) que satisfaga la definición formal.",
+            answers: ["0.05", "1/20"],
+            hints: [
+                "Pista 1: La definición exige que si \\( 0 < |x - 3| < \\delta \\), entonces \\( |f(x) - L| < \\epsilon \\).",
+                "Pista 2: Sustituye las funciones: \\( |(2x - 1) - 5| < 0.1 \\).",
+                "Pista 3: Simplifica el valor absoluto para que aparezca \\( |x - 3| \\). Saca factor común 2 y pásalo dividiendo."
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. Partimos de \\( |f(x) - L| < \\epsilon \\):<br>\\[ |(2x - 1) - 5| < 0.1 \\]<br>2. Simplificamos el interior del valor absoluto:<br>\\[ |2x - 6| < 0.1 \\]<br>3. Factorizamos el 2 (por ser positivo sale igual del valor absoluto):<br>\\[ 2|x - 3| < 0.1 \\]<br>4. Despejamos \\( |x - 3| \\) para igualar a \\( \\delta \\):<br>\\[ |x - 3| < \\frac{0.1}{2} = 0.05 \\]<br>El mayor valor posible para \\( \\delta \\) es 0.05."
+        },
+        {
+            topic: "Análisis Épsilon-Delta",
+            text: "Para demostrar formalmente que \\( \\lim_{x \\to -2} (-3x + 4) = 10 \\), se encuentra una relación del tipo \\( \\delta = k \\cdot \\epsilon \\). ¿Cuál es el valor exacto de la constante <strong>\\( k \\)</strong>? <br><small><em>(Ingresa una fracción simplificada)</em></small>",
+            answers: ["1/3"],
+            hints: [
+                "Pista 1: Inicia con \\( |(-3x + 4) - 10| < \\epsilon \\).",
+                "Pista 2: Simplifica obteniendo \\( |-3x - 6| < \\epsilon \\).",
+                "Pista 3: Saca factor común -3. Recuerda que al salir del valor absoluto, sale como positivo: \\( |-3| \\cdot |x + 2| \\). Luego despeja \\( |x - (-2)| \\)."
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. Escribimos la condición \\( |f(x) - L| < \\epsilon \\):<br>\\[ |-3x + 4 - 10| < \\epsilon \\]<br>\\[ |-3x - 6| < \\epsilon \\]<br>2. Factorizamos -3 dentro del valor absoluto:<br>\\[ |-3(x + 2)| < \\epsilon \\]<br>3. Por propiedades, \\( |a \\cdot b| = |a| \\cdot |b| \\):<br>\\[ |-3| \\cdot |x + 2| < \\epsilon \\]<br>\\[ 3|x + 2| < \\epsilon \\]<br>4. Despejamos la forma \\( |x - c| \\) que corresponde a \\( \\delta \\):<br>\\[ |x + 2| < \\frac{\\epsilon}{3} \\]<br>Por lo tanto, elegimos \\( \\delta = \\frac{1}{3}\\epsilon \\), haciendo \\( k = 1/3 \\)."
+        },
+
+        // --- LÍMITES INDETERMINADOS 0/0 (FACTORIZACIÓN) ---
+        {
+            topic: "Indeterminación 0/0 (Diferencia de Cuadrados)",
+            text: "Rompe la indeterminación y calcula: <br><br> \\( \\lim_{x \\to 4} \\frac{x^2 - 16}{x - 4} \\)",
+            answers: ["8"],
+            hints: [
+                "Pista 1: Al evaluar en x=4 obtienes 0/0. El numerador es una diferencia de cuadrados.",
+                "Pista 2: Factoriza el numerador sabiendo que \\( a^2 - b^2 = (a-b)(a+b) \\).",
+                "Pista 3: Cancela el término \\( (x - 4) \\) y evalúa el límite resultante."
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. Evaluación directa da 0/0.<br>2. Factorizamos el numerador:<br>\\[ \\lim_{x \\to 4} \\frac{(x - 4)(x + 4)}{x - 4} \\]<br>3. Como \\( x \\to 4 \\) pero \\( x \\neq 4 \\), podemos cancelar el término conflictivo:<br>\\[ \\lim_{x \\to 4} (x + 4) \\]<br>4. Evaluamos el nuevo límite:<br>\\[ 4 + 4 = 8 \\]"
+        },
+        {
+            topic: "Indeterminación 0/0 (Trinomios Cuadráticos)",
+            text: "Calcula el valor exacto de: <br><br> \\( \\lim_{x \\to 3} \\frac{x^2 - x - 6}{x^2 - 9} \\) <br><small><em>(Ingresa fracción simplificada. Ej: 2/5)</em></small>",
+            answers: ["5/6"],
+            hints: [
+                "Pista 1: Factoriza el numerador buscando números que multipliquen -6 y sumen -1.",
+                "Pista 2: Factoriza el denominador usando diferencia de cuadrados.",
+                "Pista 3: El factor común problemático es \\( (x - 3) \\). Cancélalo y evalúa el límite en x=3."
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. Al evaluar obtenemos 0/0.<br>2. Factorizamos el numerador: \\( x^2 - x - 6 = (x - 3)(x + 2) \\).<br>3. Factorizamos el denominador: \\( x^2 - 9 = (x - 3)(x + 3) \\).<br>4. Sustituimos en el límite y cancelamos:<br>\\[ \\lim_{x \\to 3} \\frac{(x - 3)(x + 2)}{(x - 3)(x + 3)} = \\lim_{x \\to 3} \\frac{x + 2}{x + 3} \\]<br>5. Evaluamos el límite remanente:<br>\\[ \\frac{3 + 2}{3 + 3} = \\frac{5}{6} \\]"
+        },
+        {
+            topic: "Indeterminación 0/0 (Suma/Diferencia de Cubos)",
+            text: "Calcula numéricamente: <br><br> \\( \\lim_{x \\to 2} \\frac{x^3 - 8}{x - 2} \\)",
+            answers: ["12"],
+            hints: [
+                "Pista 1: El numerador es una diferencia de cubos perfectos (\\( x^3 - 2^3 \\)).",
+                "Pista 2: La fórmula de factorización es \\( a^3 - b^3 = (a - b)(a^2 + ab + b^2) \\).",
+                "Pista 3: Al factorizar, cancelarás el denominador. Luego, evalúa la expresión cuadrática restante en x=2."
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. Evaluación directa da 0/0.<br>2. Factorizamos el numerador como diferencia de cubos:<br>\\[ x^3 - 8 = (x - 2)(x^2 + 2x + 4) \\]<br>3. Sustituimos en el límite:<br>\\[ \\lim_{x \\to 2} \\frac{(x - 2)(x^2 + 2x + 4)}{x - 2} \\]<br>4. Cancelamos y evaluamos:<br>\\[ \\lim_{x \\to 2} (x^2 + 2x + 4) = (2)^2 + 2(2) + 4 = 4 + 4 + 4 = 12 \\]"
+        },
+
+        // --- LÍMITES INDETERMINADOS 0/0 (RACIONALIZACIÓN) ---
+        {
+            topic: "Indeterminación 0/0 (Radical Simple)",
+            text: "Halla el valor exacto de: <br><br> \\( \\lim_{x \\to 9} \\frac{\\sqrt{x} - 3}{x - 9} \\) <br><small><em>(Ingresa fracción simplificada)</em></small>",
+            answers: ["1/6"],
+            hints: [
+                "Pista 1: Multiplica numerador y denominador por el conjugado del numerador, que es \\( (\\sqrt{x} + 3) \\).",
+                "Pista 2: En el numerador, te quedará un producto notable: \\( (\\sqrt{x})^2 - (3)^2 = x - 9 \\).",
+                "Pista 3: Cancela el término \\( x - 9 \\) del numerador y del denominador. ¡Recuerda que queda un 1 en el numerador!"
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. Como da 0/0, racionalizamos multiplicando por el conjugado:<br>\\[ \\lim_{x \\to 9} \\frac{(\\sqrt{x} - 3)(\\sqrt{x} + 3)}{(x - 9)(\\sqrt{x} + 3)} \\]<br>2. Aplicamos producto notable en el numerador:<br>\\[ \\lim_{x \\to 9} \\frac{x - 9}{(x - 9)(\\sqrt{x} + 3)} \\]<br>3. Cancelamos el término común:<br>\\[ \\lim_{x \\to 9} \\frac{1}{\\sqrt{x} + 3} \\]<br>4. Evaluamos:<br>\\[ \\frac{1}{\\sqrt{9} + 3} = \\frac{1}{3 + 3} = \\frac{1}{6} \\]"
+        },
+        {
+            topic: "Indeterminación 0/0 (Radical Compuesto)",
+            text: "Calcula el valor exacto de: <br><br> \\( \\lim_{x \\to 0} \\frac{\\sqrt{x+4} - 2}{x} \\)",
+            answers: ["1/4", "0.25"],
+            hints: [
+                "Pista 1: Racionaliza multiplicando arriba y abajo por \\( (\\sqrt{x+4} + 2) \\).",
+                "Pista 2: Al multiplicar los conjugados en el numerador obtendrás \\( (x + 4) - 4 \\).",
+                "Pista 3: El numerador se reduce a \\( x \\). Cancélala con la \\( x \\) del denominador y evalúa en 0."
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. Al evaluar da 0/0. Multiplicamos por la conjugada:<br>\\[ \\lim_{x \\to 0} \\frac{(\\sqrt{x+4} - 2)(\\sqrt{x+4} + 2)}{x(\\sqrt{x+4} + 2)} \\]<br>2. Resolvemos el numerador:<br>\\[ \\lim_{x \\to 0} \\frac{(x + 4) - 4}{x(\\sqrt{x+4} + 2)} = \\lim_{x \\to 0} \\frac{x}{x(\\sqrt{x+4} + 2)} \\]<br>3. Cancelamos la \\( x \\):<br>\\[ \\lim_{x \\to 0} \\frac{1}{\\sqrt{x+4} + 2} \\]<br>4. Evaluamos para \\( x = 0 \\):<br>\\[ \\frac{1}{\\sqrt{4} + 2} = \\frac{1}{2 + 2} = \\frac{1}{4} = 0.25 \\]"
+        },
+        {
+            topic: "Indeterminación 0/0 (Radical con coeficientes)",
+            text: "Encuentra el valor exacto de: <br><br> \\( \\lim_{x \\to 4} \\frac{\\sqrt{2x+1} - 3}{x - 4} \\) <br><small><em>(Ingresa fracción simplificada)</em></small>",
+            answers: ["1/3"],
+            hints: [
+                "Pista 1: Multiplica por el conjugado: \\( \\sqrt{2x+1} + 3 \\).",
+                "Pista 2: En el numerador te quedará \\( (2x + 1) - 9 \\), que se simplifica a \\( 2x - 8 \\).",
+                "Pista 3: Factoriza el numerador sacando factor común 2, obteniendo \\( 2(x - 4) \\). Cancela y evalúa."
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. Racionalizamos multiplicando por el conjugado:<br>\\[ \\lim_{x \\to 4} \\frac{(\\sqrt{2x+1} - 3)(\\sqrt{2x+1} + 3)}{(x - 4)(\\sqrt{2x+1} + 3)} \\]<br>2. Aplicamos diferencia de cuadrados en el numerador:<br>\\[ \\lim_{x \\to 4} \\frac{2x + 1 - 9}{(x - 4)(\\sqrt{2x+1} + 3)} \\]<br>\\[ \\lim_{x \\to 4} \\frac{2x - 8}{(x - 4)(\\sqrt{2x+1} + 3)} \\]<br>3. Factorizamos el numerador y cancelamos:<br>\\[ \\lim_{x \\to 4} \\frac{2(x - 4)}{(x - 4)(\\sqrt{2x+1} + 3)} = \\lim_{x \\to 4} \\frac{2}{\\sqrt{2x+1} + 3} \\]<br>4. Evaluamos en \\( x = 4 \\):<br>\\[ \\frac{2}{\\sqrt{9} + 3} = \\frac{2}{3 + 3} = \\frac{2}{6} = \\frac{1}{3} \\]"
+        },
+
+        // --- LÍMITES ESPECIALES: FRACCIONES Y VALOR ABSOLUTO ---
+        {
+            topic: "Límites con Fracciones Complejas",
+            text: "Resuelve de forma analítica: <br><br> \\( \\lim_{x \\to 0} \\frac{\\frac{1}{x+2} - \\frac{1}{2}}{x} \\)",
+            answers: ["-1/4", "-0.25"],
+            hints: [
+                "Pista 1: Realiza la resta de fracciones en el numerador buscando mínimo común múltiplo.",
+                "Pista 2: El numerador será \\( \\frac{2 - (x+2)}{2(x+2)} \\). Ten cuidado con el signo menos, altera a toda la expresión del paréntesis.",
+                "Pista 3: Te quedará \\( -x \\) arriba. Al aplicar la \"doble C\" o extremos y medios, podrás cancelar la \\( x \\)."
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. Restamos las fracciones del numerador:<br>\\[ \\lim_{x \\to 0} \\frac{ \\frac{2 - (x+2)}{2(x+2)} }{x} \\]<br>\\[ \\lim_{x \\to 0} \\frac{ \\frac{2 - x - 2}{2(x+2)} }{x} \\]<br>\\[ \\lim_{x \\to 0} \\frac{ \\frac{-x}{2(x+2)} }{x} \\]<br>2. Aplicamos propiedades de división de fracciones (el \\( x \\) inferior tiene denominador 1):<br>\\[ \\lim_{x \\to 0} \\frac{-x}{x \\cdot 2(x+2)} \\]<br>3. Cancelamos la \\( x \\) (ya que \\( x \\neq 0 \\)):<br>\\[ \\lim_{x \\to 0} \\frac{-1}{2(x+2)} \\]<br>4. Evaluamos:<br>\\[ \\frac{-1}{2(0+2)} = -\\frac{1}{4} = -0.25 \\]"
+        },
+        {
+            topic: "Límites Laterales y Valor Absoluto (Trampa de signo)",
+            text: "Analiza rigurosamente y halla: <br><br> \\( \\lim_{x \\to 3^-} \\frac{|x - 3|}{x - 3} \\)",
+            answers: ["-1"],
+            hints: [
+                "Pista 1: Estás evaluando el límite por la izquierda, es decir, para valores ligeramente MENORES que 3 (ej. 2.9, 2.99).",
+                "Pista 2: Si \\( x < 3 \\), entonces la expresión \\( x - 3 \\) es un número NEGATIVO.",
+                "Pista 3: Por definición de valor absoluto, si el interior es negativo, se le quitan las barras multiplicando por un signo menos: \\( -(x - 3) \\). Sustituye y cancela."
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. Analizamos el comportamiento del valor absoluto. Por definición:<br>\\( |x - 3| = x - 3 \\) si \\( x \\geq 3 \\)<br>\\( |x - 3| = -(x - 3) \\) si \\( x < 3 \\)<br>2. Como el límite nos exige acercarnos a 3 por la izquierda (\\( x \\to 3^- \\)), tomamos el escenario donde \\( x < 3 \\).<br>3. Reemplazamos en el límite:<br>\\[ \\lim_{x \\to 3^-} \\frac{-(x - 3)}{x - 3} \\]<br>4. Cancelamos los factores comunes:<br>\\[ \\lim_{x \\to 3^-} (-1) = -1 \\]"
+        },
+
+        // --- ASÍNTOTAS Y LÍMITES AL INFINITO ---
+        {
+            topic: "Asíntotas Verticales",
+            text: "Dada la función racional \\( f(x) = \\frac{2x + 5}{x - 4} \\), halla el valor \\( x = k \\) donde la función presenta una asíntota vertical.",
+            answers: ["4"],
+            hints: [
+                "Pista 1: Las asíntotas verticales ocurren en aquellos puntos que anulan el denominador pero NO el numerador (para que el límite dé infinito).",
+                "Pista 2: Iguala el denominador a cero: \\( x - 4 = 0 \\).",
+                "Pista 3: Verifica que al evaluar en ese punto, el numerador no sea cero."
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. Buscamos valores que indefinida a la función, igualando el denominador a cero:<br>\\[ x - 4 = 0 \\implies x = 4 \\]<br>2. Verificamos que el numerador no se anule en dicho punto (si se anulara podría ser un \"hueco\" y no una asíntota):<br>\\[ 2(4) + 5 = 13 \\neq 0 \\]<br>3. Formalmente, comprobamos el límite:<br>\\[ \\lim_{x \\to 4^+} \\frac{2x+5}{x-4} = \\frac{13}{0^+} = +\\infty \\]<br>Efectivamente, existe una asíntota vertical en \\( x = 4 \\)."
+        },
+        {
+            topic: "Límites al Infinito (Grados Iguales)",
+            text: "Calcula el valor exacto del límite (o asíntota horizontal): <br><br> \\( \\lim_{x \\to \\infty} \\frac{6x^2 - x + 1}{2x^2 + 5} \\)",
+            answers: ["3"],
+            hints: [
+                "Pista 1: Cuando \\( x \\to \\infty \\) y los polinomios tienen el mismo grado, el límite es el cociente de sus coeficientes principales.",
+                "Pista 2: Formalmente, divide todos los términos del numerador y denominador entre la variable con el mayor exponente (\\( x^2 \\)).",
+                "Pista 3: Todos los términos que queden divididos entre \\( x \\) tenderán a cero. Solo sobrevivirán los números enteros."
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. Identificamos el término de mayor grado, que es \\( x^2 \\). Dividimos cada término entre \\( x^2 \\):<br>\\[ \\lim_{x \\to \\infty} \\frac{\\frac{6x^2}{x^2} - \\frac{x}{x^2} + \\frac{1}{x^2}}{\\frac{2x^2}{x^2} + \\frac{5}{x^2}} \\]<br>2. Simplificamos:<br>\\[ \\lim_{x \\to \\infty} \\frac{6 - \\frac{1}{x} + \\frac{1}{x^2}}{2 + \\frac{5}{x^2}} \\]<br>3. Aplicamos propiedades de límites al infinito (\\( \\frac{c}{x^n} \\to 0 \\)):<br>\\[ \\frac{6 - 0 + 0}{2 + 0} = \\frac{6}{2} = 3 \\]"
+        },
+        {
+            topic: "Límites al Infinito (Grado Inferior en Numerador)",
+            text: "Determina numéricamente hacia qué valor converge la función cuando \\( x \\to \\infty \\): <br><br> \\( \\lim_{x \\to \\infty} \\frac{5x^3 - 2x^2 + 1}{x^4 + 3x} \\)",
+            answers: ["0"],
+            hints: [
+                "Pista 1: Observa los grados de los polinomios. El numerador es de grado 3, y el denominador es de grado 4.",
+                "Pista 2: Cuando el grado del denominador es estrictamente mayor que el del numerador, el denominador crece mucho más rápido.",
+                "Pista 3: Divide todo entre \\( x^4 \\) para demostrarlo matemáticamente; verás que el numerador se vuelve cero completo."
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. Dividimos todos los términos por la potencia mayor del denominador, que es \\( x^4 \\):<br>\\[ \\lim_{x \\to \\infty} \\frac{\\frac{5}{x} - \\frac{2}{x^2} + \\frac{1}{x^4}}{1 + \\frac{3}{x^3}} \\]<br>2. Aplicamos el límite cuando \\( x \\to \\infty \\):<br>\\[ \\frac{0 - 0 + 0}{1 + 0} = \\frac{0}{1} = 0 \\]<br>La función converge a 0 (asíntota horizontal en \\( y = 0 \\))."
+        },
+        {
+            topic: "Límites al Menos Infinito (Trampa con Raíces)",
+            text: "Evalúa rigurosamente este límite clásico universitario: <br><br> \\( \\lim_{x \\to -\\infty} \\frac{4x - 1}{\\sqrt{x^2 + 2}} \\)",
+            answers: ["-4"],
+            hints: [
+                "Pista 1: Factoriza \\( x^2 \\) dentro de la raíz: \\( \\sqrt{x^2(1 + 2/x^2)} \\).",
+                "Pista 2: La regla fundamental establece que \\( \\sqrt{x^2} = |x| \\).",
+                "Pista 3: Como \\( x \\to -\\infty \\), los valores de \\( x \\) son negativos, por lo que \\( |x| = -x \\). Al extraer la 'x' de la raíz, sale negativa. Divide todo entre \\( x \\)."
+            ],
+            solution: "<strong>Procedimiento (Cuidado con los signos):</strong><br>1. Factorizamos la potencia dominante en el denominador:<br>\\[ \\sqrt{x^2 \\left(1 + \\frac{2}{x^2}\\right)} = \\sqrt{x^2} \\cdot \\sqrt{1 + \\frac{2}{x^2}} \\]<br>2. Sabiendo que \\( \\sqrt{x^2} = |x| \\), y dado que \\( x \\to -\\infty \\) (valores negativos), se cumple que \\( |x| = -x \\). Por tanto, el denominador queda:<br>\\[ -x \\sqrt{1 + \\frac{2}{x^2}} \\]<br>3. Reescribimos el límite y dividimos numerador y denominador entre \\( x \\):<br>\\[ \\lim_{x \\to -\\infty} \\frac{x(4 - \\frac{1}{x})}{-x \\sqrt{1 + \\frac{2}{x^2}}} \\]<br>4. Cancelamos \\( x \\) y evaluamos los límites parciales a cero:<br>\\[ \\frac{4 - 0}{-1 \\sqrt{1 + 0}} = \\frac{4}{-1} = -4 \\]"
+        },
+        {
+            topic: "Indeterminación de Límites Exponenciales e Infinitos",
+            text: "Halla la asíntota horizontal (calculando el límite cuando \\( x \\to \\infty \\)) de la función: <br><br> \\( f(x) = \\frac{3e^x - 1}{e^x + 5} \\)",
+            answers: ["3"],
+            hints: [
+                "Pista 1: Se resuelve de forma análoga a los polinomios, pero usando las funciones exponenciales.",
+                "Pista 2: Divide cada término del numerador y del denominador entre \\( e^x \\).",
+                "Pista 3: Recuerda que cuando \\( x \\to \\infty \\), la expresión \\( \\frac{1}{e^x} \\to 0 \\)."
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. Al evaluar directamente obtenemos la forma indeterminada \\( \\frac{\\infty}{\\infty} \\).<br>2. Dividimos todos los términos de la fracción entre el término dominante \\( e^x \\):<br>\\[ \\lim_{x \\to \\infty} \\frac{\\frac{3e^x}{e^x} - \\frac{1}{e^x}}{\\frac{e^x}{e^x} + \\frac{5}{e^x}} \\]<br>3. Simplificamos:<br>\\[ \\lim_{x \\to \\infty} \\frac{3 - \\frac{1}{e^x}}{1 + \\frac{5}{e^x}} \\]<br>4. Como \\( e^x \\) crece sin límite, los términos divididos por \\( e^x \\) tienden a cero:<br>\\[ \\frac{3 - 0}{1 + 0} = 3 \\]<br>La asíntota horizontal es \\( y = 3 \\)."
+        },
+
+        // --- LÍMITES TRIGONOMÉTRICOS ---
+        {
+            topic: "Límite Trigonométrico Fundamental",
+            text: "Calcula el valor numérico exacto de: <br><br> \\( \\lim_{x \\to 0} \\frac{\\sin(4x)}{5x} \\) <br><small><em>(Ingresa fracción simplificada o decimal)</em></small>",
+            answers: ["4/5", "0.8"],
+            hints: [
+                "Pista 1: El límite fundamental es \\( \\lim_{u \\to 0} \\frac{\\sin(u)}{u} = 1 \\). El argumento del seno y el denominador deben ser iguales.",
+                "Pista 2: Multiplica el numerador y el denominador por 4 para forzar que aparezca un \\( 4x \\) en el denominador.",
+                "Pista 3: Te quedará \\( \\frac{4}{5} \\cdot \\frac{\\sin(4x)}{4x} \\). Evalúa el límite."
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. Buscamos aplicar el teorema \\( \\lim_{u \\to 0} \\frac{\\sin(u)}{u} = 1 \\).<br>2. Multiplicamos y dividimos por 4:<br>\\[ \\lim_{x \\to 0} \\frac{4 \\cdot \\sin(4x)}{5 \\cdot 4x} \\]<br>3. Reordenamos los factores numéricos sacándolos del límite:<br>\\[ \\frac{4}{5} \\cdot \\lim_{x \\to 0} \\frac{\\sin(4x)}{4x} \\]<br>4. Evaluamos el límite notable, que vale 1:<br>\\[ \\frac{4}{5} \\cdot 1 = \\frac{4}{5} = 0.8 \\]"
+        },
+        {
+            topic: "Límites Trigonométricos (Coseno)",
+            text: "Halla el valor exacto de: <br><br> \\( \\lim_{x \\to 0} \\frac{1 - \\cos(2x)}{x^2} \\)",
+            answers: ["2"],
+            hints: [
+                "Pista 1: Puedes usar la identidad del ángulo doble: \\( 1 - \\cos(2x) = 2\\sin^2(x) \\).",
+                "Pista 2: Sustituye esta identidad en el límite: \\( \\lim_{x \\to 0} \\frac{2\\sin^2(x)}{x^2} \\).",
+                "Pista 3: Saca el 2 del límite y agrupa el seno y la x al cuadrado: \\( 2 \\cdot \\left[ \\lim_{x \\to 0} \\frac{\\sin(x)}{x} \\right]^2 \\)."
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. Usamos la identidad trigonométrica del ángulo mitad/doble: \\( \\sin^2(x) = \\frac{1 - \\cos(2x)}{2} \\implies 1 - \\cos(2x) = 2\\sin^2(x) \\).<br>2. Sustituimos en el límite original:<br>\\[ \\lim_{x \\to 0} \\frac{2\\sin^2(x)}{x^2} \\]<br>3. Aplicamos propiedades de los límites (el 2 sale como constante y agrupamos el cuadrado):<br>\\[ 2 \\cdot \\lim_{x \\to 0} \\left( \\frac{\\sin(x)}{x} \\right)^2 \\]<br>4. Evaluamos el límite interno (que vale 1) y elevamos al cuadrado:<br>\\[ 2 \\cdot (1)^2 = 2 \\]"
+        },
+        {
+            topic: "Límites Trigonométricos (Tangente)",
+            text: "Calcula numéricamente: <br><br> \\( \\lim_{x \\to 0} \\frac{\\tan(3x)}{\\sin(2x)} \\) <br><small><em>(Ingresa fracción simplificada o decimal)</em></small>",
+            answers: ["3/2", "1.5"],
+            hints: [
+                "Pista 1: Divide tanto el numerador como el denominador entre \\( x \\).",
+                "Pista 2: Te quedará \\( \\frac{(\\tan(3x)/x)}{(\\sin(2x)/x)} \\).",
+                "Pista 3: Recuerda que los límites notables son \\( \\lim_{x \\to 0} \\frac{\\sin(kx)}{x} = k \\) y \\( \\lim_{x \\to 0} \\frac{\\tan(kx)}{x} = k \\)."
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. Dividimos el numerador y el denominador de la fracción principal entre \\( x \\):<br>\\[ \\lim_{x \\to 0} \\frac{ \\frac{\\tan(3x)}{x} }{ \\frac{\\sin(2x)}{x} } \\]<br>2. Distribuimos el límite arriba y abajo:<br>\\[ \\frac{ \\lim_{x \\to 0} \\frac{\\tan(3x)}{x} }{ \\lim_{x \\to 0} \\frac{\\sin(2x)}{x} } \\]<br>3. Aplicamos los límites fundamentales sabiendo que tienden a sus coeficientes:<br>\\[ \\frac{3}{2} = 1.5 \\]"
+        },
+        {
+            topic: "Cambio de Variable en Límites Trigonométricos",
+            text: "Encuentra el valor exacto de: <br><br> \\( \\lim_{x \\to \\pi} \\frac{\\sin(x)}{x - \\pi} \\)",
+            answers: ["-1"],
+            hints: [
+                "Pista 1: Cuando el límite no tiende a cero, un cambio de variable es muy útil. Haz \\( u = x - \\pi \\).",
+                "Pista 2: Si \\( x \\to \\pi \\), entonces \\( u \\to 0 \\). Y despejando, \\( x = u + \\pi \\).",
+                "Pista 3: Sustituye: \\( \\lim_{u \\to 0} \\frac{\\sin(u + \\pi)}{u} \\). Recuerda que por identidades, \\( \\sin(u + \\pi) = -\\sin(u) \\)."
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. Realizamos el cambio de variable: \\( u = x - \\pi \\).<br>2. Evaluamos la tendencia: Si \\( x \\to \\pi \\), entonces \\( u \\to 0 \\).<br>3. Expresamos \\( x \\) en términos de \\( u \\): \\( x = u + \\pi \\).<br>4. Reemplazamos todo en el límite original:<br>\\[ \\lim_{u \\to 0} \\frac{\\sin(u + \\pi)}{u} \\]<br>5. Por identidad de reducción al primer cuadrante, \\( \\sin(u + \\pi) = -\\sin(u) \\):<br>\\[ \\lim_{u \\to 0} \\frac{-\\sin(u)}{u} = -1 \\cdot \\lim_{u \\to 0} \\frac{\\sin(u)}{u} = -1(1) = -1 \\]"
+        },
+        {
+            topic: "Teorema del Sándwich (Oscilaciones)",
+            text: "Determina numéricamente el límite hacia el infinito: <br><br> \\( \\lim_{x \\to \\infty} \\frac{\\sin(x)}{x} \\)",
+            answers: ["0"],
+            hints: [
+                "Pista 1: La función seno oscila, pero siempre está acotada entre -1 y 1.",
+                "Pista 2: Plantea la desigualdad: \\( -1 \\leq \\sin(x) \\leq 1 \\).",
+                "Pista 3: Divide toda la desigualdad entre \\( x \\) (asumiendo \\( x > 0 \\)) y calcula el límite de los extremos cuando \\( x \\to \\infty \\)."
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. Sabemos que el seno está acotado:<br>\\[ -1 \\leq \\sin(x) \\leq 1 \\]<br>2. Para \\( x > 0 \\) (ya que vamos a \\( +\\infty \\)), dividimos toda la expresión entre \\( x \\) sin alterar las desigualdades:<br>\\[ -\\frac{1}{x} \\leq \\frac{\\sin(x)}{x} \\leq \\frac{1}{x} \\]<br>3. Calculamos el límite en los extremos cuando \\( x \\to \\infty \\):<br>\\[ \\lim_{x \\to \\infty} \\left(-\\frac{1}{x}\\right) = 0 \\quad \\text{y} \\quad \\lim_{x \\to \\infty} \\left(\\frac{1}{x}\\right) = 0 \\]<br>4. Por el Teorema del Sándwich (o Estricción), la función del medio está obligada a tener el mismo límite:<br>\\[ \\lim_{x \\to \\infty} \\frac{\\sin(x)}{x} = 0 \\]"
+        },
+
+        // --- LÍMITES CON FUNCIONES INVERSAS ---
+        {
+            topic: "Límites con Funciones Trigonométricas Inversas",
+            text: "Calcula el valor exacto de: <br><br> \\( \\lim_{x \\to 0} \\frac{\\arcsin(2x)}{x} \\)",
+            answers: ["2"],
+            hints: [
+                "Pista 1: Puedes hacer un cambio de variable \\( u = \\arcsin(2x) \\), lo que implica que \\( \\sin(u) = 2x \\).",
+                "Pista 2: Despeja \\( x \\) para el denominador: \\( x = \\frac{\\sin(u)}{2} \\). Cuando \\( x \\to 0 \\), \\( u \\to 0 \\).",
+                "Pista 3: Sustituye en el límite: \\( \\lim_{u \\to 0} \\frac{u}{\\sin(u)/2} \\). Aplica la \"doble C\" y el límite fundamental."
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. Cambio de variable: Sea \\( u = \\arcsin(2x) \\)  \\( \\implies \\sin(u) = 2x \\implies x = \\frac{\\sin(u)}{2} \\).<br>2. Si \\( x \\to 0 \\), entonces \\( u \\to \\arcsin(0) = 0 \\).<br>3. Sustituimos en el límite:<br>\\[ \\lim_{u \\to 0} \\frac{u}{\\frac{\\sin(u)}{2}} \\]<br>4. Arreglamos la fracción (extremos y medios):<br>\\[ \\lim_{u \\to 0} \\frac{2u}{\\sin(u)} \\]<br>5. Sabemos que \\( \\lim_{u \\to 0} \\frac{u}{\\sin(u)} = 1 \\), por lo tanto:<br>\\[ 2(1) = 2 \\]"
+        },
+        {
+            topic: "Asíntota Horizontal del Arcotangente",
+            text: "Evalúa analíticamente el siguiente límite hacia el infinito: <br><br> \\( \\lim_{x \\to \\infty} \\arctan(x) \\) <br><small><em>(Ingresa tu respuesta usando 'pi', por ejemplo: pi/2 o pi/4, sin espacios)</em></small>",
+            answers: ["pi/2"],
+            hints: [
+                "Pista 1: Piensa en la gráfica de la función tangente original \\( y = \\tan(x) \\).",
+                "Pista 2: La tangente tiene asíntotas verticales en \\( x = \\pi/2 \\) y \\( x = -\\pi/2 \\) porque allí se va al infinito.",
+                "Pista 3: En la función inversa (arcotangente), las \\( x \\) y las \\( y \\) se intercambian. Por lo tanto, si la entrada se va a infinito, la salida se va hacia esa asíntota."
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. Para entender el límite de \\( \\arctan(x) \\) cuando \\( x \\to \\infty \\), analizamos la función original \\( y = \\tan(\\theta) \\).<br>2. Sabemos que a medida que el ángulo \\( \\theta \\) se acerca a \\( \\pi/2 \\) por la izquierda (valores positivos), la tangente crece hacia \\( +\\infty \\).<br>3. La función \\( \\arctan(x) \\) es la inversa restringida en el intervalo \\( (-\\pi/2, \\pi/2) \\).<br>4. Por definición, si \\( x \\to +\\infty \\), el ángulo del cual proviene se acerca al extremo superior de ese intervalo.<br>\\[ \\lim_{x \\to \\infty} \\arctan(x) = \\frac{\\pi}{2} \\]"
+        },
+        {
+            topic: "Límites Compuestos con Inversas",
+            text: "Calcula el valor exacto de: <br><br> \\( \\lim_{x \\to \\infty} \\arcsin\\left( \\frac{x}{2x + 1} \\right) \\) <br><small><em>(Ingresa tu respuesta usando 'pi')</em></small>",
+            answers: ["pi/6"],
+            hints: [
+                "Pista 1: Como la función arcoseno es continua en su dominio, puedes introducir el límite dentro de su argumento.",
+                "Pista 2: Calcula primero \\( \\lim_{x \\to \\infty} \\frac{x}{2x + 1} \\) dividiendo entre \\( x \\).",
+                "Pista 3: Ese límite interno te dará 1/2. Finalmente calcula \\( \\arcsin(1/2) \\), que es el ángulo cuyo seno vale 1/2 en el primer cuadrante."
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. Aplicamos la propiedad de continuidad: el límite puede entrar al argumento de funciones continuas.<br>\\[ \\arcsin\\left( \\lim_{x \\to \\infty} \\frac{x}{2x + 1} \\right) \\]<br>2. Resolvemos el límite racional al infinito dividiendo todo entre \\( x \\):<br>\\[ \\lim_{x \\to \\infty} \\frac{1}{2 + \\frac{1}{x}} = \\frac{1}{2 + 0} = \\frac{1}{2} \\]<br>3. Evaluamos la función trigonométrica inversa con este resultado:<br>\\[ \\arcsin\\left(\\frac{1}{2}\\right) \\]<br>4. El ángulo en \\( [-\\pi/2, \\pi/2] \\) cuyo seno es 1/2 es 30°, que en radianes es \\( \\pi/6 \\)."
+        },
+
+        // --- ASÍNTOTAS ---
+        {
+            topic: "Asíntotas Verticales y \"Huecos\"",
+            text: "Dada la función racional \\( f(x) = \\frac{x^2 - 9}{x^2 - 3x} \\), halla la ecuación de su única asíntota vertical evaluando dónde el límite da infinito. Ingresa solo el valor numérico de <strong>\\( x \\)</strong>.",
+            answers: ["0"],
+            hints: [
+                "Pista 1: Factoriza numerador y denominador: \\( \\frac{(x-3)(x+3)}{x(x-3)} \\).",
+                "Pista 2: Observa que el factor \\( (x-3) \\) se cancela. Esto significa que en \\( x=3 \\) hay un hueco (discontinuidad evitable), NO una asíntota.",
+                "Pista 3: El factor que sobrevive en el denominador dicta dónde está la verdadera asíntota vertical."
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. Factorizamos la función para ver posibles cancelaciones:<br>\\[ f(x) = \\frac{(x - 3)(x + 3)}{x(x - 3)} \\]<br>2. Simplificamos asumiendo \\( x \\neq 3 \\):<br>\\[ f(x) = \\frac{x + 3}{x} \\]<br>3. Analizamos las restricciones originales (\\( x=0, x=3 \\)):<br>- En \\( x=3 \\), \\( \\lim_{x \\to 3} \\frac{x+3}{x} = \\frac{6}{3} = 2 \\). Es un hueco, no es infinito.<br>- En \\( x=0 \\), \\( \\lim_{x \\to 0} \\frac{x+3}{x} = \\frac{3}{0} = \\infty \\). <br>4. Por lo tanto, la única asíntota vertical está en \\( x = 0 \\)."
+        },
+        {
+            topic: "Asíntotas Oblicuas (Pendiente)",
+            text: "Dada la función \\( f(x) = \\frac{x^2 - 3x + 2}{x + 1} \\), se sabe que tiene una asíntota oblicua (inclinada) de la forma \\( y = mx + b \\). ¿Cuál es el valor exacto de la pendiente <strong>\\( m \\)</strong>?",
+            answers: ["1"],
+            hints: [
+                "Pista 1: Hay asíntota oblicua porque el grado del numerador (2) es exactamente una unidad mayor que el grado del denominador (1).",
+                "Pista 2: Para hallar la recta, realiza la división de polinomios (división larga o Ruffini) entre el numerador y el denominador.",
+                "Pista 3: El cociente de la división será la ecuación de la asíntota oblicua. Alternativamente, puedes usar la fórmula de límites: \\( m = \\lim_{x \\to \\infty} \\frac{f(x)}{x} \\)."
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. Como el grado del numerador es 2 y el del denominador es 1, existe una asíntota oblicua.<br>2. Método 1 (División polinómica):<br>Dividimos \\( x^2 - 3x + 2 \\) entre \\( x + 1 \\).<br>\\[ (x^2 - 3x + 2) = (x - 4)(x + 1) + 6 \\]<br>Por lo tanto, \\( f(x) = (x - 4) + \\frac{6}{x + 1} \\). La asíntota es \\( y = x - 4 \\).<br>3. Método 2 (Límites):<br>\\[ m = \\lim_{x \\to \\infty} \\frac{f(x)}{x} = \\lim_{x \\to \\infty} \\frac{x^2 - 3x + 2}{x^2 + x} = 1 \\]<br>En ambos casos, la pendiente \\( m \\) es el coeficiente que acompaña a la \\( x \\), que es 1."
+        },
+        {
+            topic: "Asíntotas Oblicuas (Corte con el eje Y)",
+            text: "Para la misma función anterior, \\( f(x) = \\frac{x^2 - 3x + 2}{x + 1} \\), ¿cuál es el valor exacto del corte con el eje Y (el término independiente <strong>\\( b \\)</strong>) de su asíntota oblicua \\( y = mx + b \\)?",
+            answers: ["-4"],
+            hints: [
+                "Pista 1: Si ya hiciste la división de polinomios, el cociente completo es la ecuación \\( y = mx + b \\).",
+                "Pista 2: Si usas la fórmula de límites, una vez hallada la pendiente \\( m = 1 \\), usa \\( b = \\lim_{x \\to \\infty} [f(x) - mx] \\).",
+                "Pista 3: Plantea: \\( \\lim_{x \\to \\infty} \\left( \\frac{x^2 - 3x + 2}{x + 1} - x \\right) \\). Haz la resta de fracciones algebraicas y evalúa el límite al infinito."
+            ],
+            solution: "<strong>Procedimiento (por límite):</strong><br>1. Ya sabemos que \\( m = 1 \\). Aplicamos la fórmula para \\( b \\):<br>\\[ b = \\lim_{x \\to \\infty} [f(x) - mx] = \\lim_{x \\to \\infty} \\left( \\frac{x^2 - 3x + 2}{x + 1} - 1(x) \\right) \\]<br>2. Realizamos la resta de fracciones:<br>\\[ \\frac{x^2 - 3x + 2 - x(x + 1)}{x + 1} \\]<br>\\[ \\frac{x^2 - 3x + 2 - x^2 - x}{x + 1} \\]<br>\\[ \\frac{-4x + 2}{x + 1} \\]<br>3. Evaluamos el límite cuando \\( x \\to \\infty \\). Como tienen el mismo grado (grado 1), dividimos los coeficientes principales:<br>\\[ \\frac{-4}{1} = -4 \\]<br>La asíntota oblicua es \\( y = 1x - 4 \\). El corte \\( b \\) es -4."
+        },
+        {
+            topic: "Múltiples Asíntotas",
+            text: "Considera la función \\( f(x) = \\frac{2x^2}{x^2 - 1} \\). Esta función posee múltiples asíntotas (verticales y horizontales) descritas por rectas de la forma \\( x=a \\), \\( x=b \\) e \\( y=c \\). ¿Cuál es la <strong>suma aritmética</strong> de todos estos valores \\( (a + b + c) \\)?",
+            answers: ["2"],
+            hints: [
+                "Pista 1: Halla las asíntotas verticales igualando el denominador a cero. \\( x^2 - 1 = 0 \\) te dará dos valores.",
+                "Pista 2: Halla la asíntota horizontal calculando el límite cuando \\( x \\to \\infty \\). Los grados son iguales, así que divide los coeficientes principales.",
+                "Pista 3: Las asíntotas verticales son \\( x = 1 \\) y \\( x = -1 \\). La horizontal es \\( y = 2 \\). Suma estos tres números."
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. <strong>Asíntotas Verticales:</strong> El denominador es \\( x^2 - 1 = (x-1)(x+1) \\). Se anula en \\( x = 1 \\) y \\( x = -1 \\). Como el numerador (\\( 2x^2 \\)) no se anula en esos puntos, hay dos asíntotas verticales:<br>\\[ a = 1, \\quad b = -1 \\]<br>2. <strong>Asíntota Horizontal:</strong> Evaluamos el límite al infinito:<br>\\[ \\lim_{x \\to \\infty} \\frac{2x^2}{x^2 - 1} = \\frac{2}{1} = 2 \\]<br>Existe una asíntota horizontal en:<br>\\[ c = 2 \\]<br>3. Sumamos todas las constantes algebraicamente:<br>\\[ 1 + (-1) + 2 = 2 \\]"
+        },
+
+        // --- CONTINUIDAD Y DISCONTINUIDAD ---
+        {
+            topic: "Continuidad en un Punto (Funciones a Trozos)",
+            text: "Dada la función: <br> \\( f(x) = \\begin{cases} kx^2, & \\text{si } x \\leq 2 \\\\ 2x + k, & \\text{si } x > 2 \\end{cases} \\) <br> ¿Qué valor debe tomar la constante <strong>\\( k \\)</strong> para que la función sea continua en todo \\( \\mathbb{R} \\)? <br><small><em>(Ingresa fracción simplificada)</em></small>",
+            answers: ["4/3"],
+            hints: [
+                "Pista 1: Para que sea continua en x = 2, el límite por la izquierda debe ser igual al límite por la derecha.",
+                "Pista 2: Límite por la izquierda: evalúa \\( x=2 \\) en \\( kx^2 \\), lo que da \\( 4k \\).",
+                "Pista 3: Límite por la derecha: evalúa \\( x=2 \\) en \\( 2x + k \\), lo que da \\( 4 + k \\). Iguala ambas expresiones y despeja \\( k \\)."
+            ],
+            solution: "<strong>Procedimiento:</strong><br>Para garantizar continuidad en \\( x = 2 \\), exigimos que: \\( \\lim_{x \\to 2^-} f(x) = \\lim_{x \\to 2^+} f(x) \\).<br>1. Límite lateral izquierdo:\\( \\lim_{x \\to 2^-} (kx^2) = k(2)^2 = 4k \\).<br>2. Límite lateral derecho:\\( \\lim_{x \\to 2^+} (2x + k) = 2(2) + k = 4 + k \\).<br>3. Igualamos ambos resultados:<br>\\[ 4k = 4 + k \\]<br>4. Despejamos \\( k \\):<br>\\[ 4k - k = 4 \\implies 3k = 4 \\implies k = \\frac{4}{3} \\]"
+        },
+        {
+            topic: "Sistemas de Ecuaciones por Continuidad",
+            text: "Dada la función definida a trozos: <br> \\( f(x) = \\begin{cases} 2, & \\text{si } x \\leq -1 \\\\ ax + b, & \\text{si } -1 < x < 3 \\\\ -2, & \\text{si } x \\geq 3 \\end{cases} \\) <br> Encuentra el valor de <strong>\\( a \\)</strong> para que la función sea continua en todo su dominio.",
+            answers: ["-1"],
+            hints: [
+                "Pista 1: Hay dos puntos de empalme donde debes forzar la continuidad: \\( x = -1 \\) y \\( x = 3 \\).",
+                "Pista 2: En \\( x = -1 \\): iguala el límite izquierdo (2) con el derecho (\\( a(-1) + b \\)). Tienes la ecuación \\( -a + b = 2 \\).",
+                "Pista 3: En \\( x = 3 \\): iguala el izquierdo (\\( a(3) + b \\)) con el derecho (-2). Tienes \\( 3a + b = -2 \\). Resuelve el sistema para encontrar \\( a \\)."
+            ],
+            solution: "<strong>Procedimiento:</strong><br>Planteamos las condiciones de continuidad en los dos puntos críticos.<br>1. Continuidad en \\( x = -1 \\):<br>\\[ \\lim_{x \\to -1^-} f(x) = 2 \\quad \\text{y} \\quad \\lim_{x \\to -1^+} f(x) = -a + b \\]<br>Ecuación 1: \\( -a + b = 2 \\)<br>2. Continuidad en \\( x = 3 \\):<br>\\[ \\lim_{x \\to 3^-} f(x) = 3a + b \\quad \\text{y} \\quad \\lim_{x \\to 3^+} f(x) = -2 \\]<br>Ecuación 2: \\( 3a + b = -2 \\)<br>3. Resolvemos el sistema restando la Ecuación 1 de la Ecuación 2:<br>\\[ (3a + b) - (-a + b) = -2 - 2 \\]<br>\\[ 4a = -4 \\implies a = -1 \\]<br><em>(Opcional: Si pusiéramos esto en la ec.1 obtendríamos \\( -(-1) + b = 2 \\implies b = 1 \\)).</em>"
+        },
+        {
+            topic: "Redefinición de una Discontinuidad Evitable (Removible)",
+            text: "La función \\( f(x) = \\frac{x^3 - 8}{x - 2} \\) no está definida en \\( x = 2 \\) (presenta una discontinuidad removible o evitable). ¿Qué valor numérico debemos asignar a \\( f(2) \\) para redefinir la función y volverla continua en ese punto?",
+            answers: ["12"],
+            hints: [
+                "Pista 1: Una discontinuidad es removible si el límite en el punto existe. El valor que debes asignar es precisamente ese límite.",
+                "Pista 2: Calcula \\( \\lim_{x \\to 2} \\frac{x^3 - 8}{x - 2} \\).",
+                "Pista 3: Factoriza el numerador como diferencia de cubos \\( (x-2)(x^2 + 2x + 4) \\), cancela el denominador y evalúa en 2."
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. Para \"tapar el hueco\" y hacerla continua, redefinimos \\( f(2) \\) igualándolo al límite de la función en ese punto:<br>\\[ f(2) := \\lim_{x \\to 2} \\frac{x^3 - 8}{x - 2} \\]<br>2. Como da 0/0, factorizamos la diferencia de cubos:<br>\\[ \\lim_{x \\to 2} \\frac{(x - 2)(x^2 + 2x + 4)}{x - 2} \\]<br>3. Cancelamos el término (x-2) y evaluamos:<br>\\[ \\lim_{x \\to 2} (x^2 + 2x + 4) = 2^2 + 2(2) + 4 = 4 + 4 + 4 = 12 \\]<br>Asignando \\( f(2) = 12 \\), la función se vuelve perfectamente continua."
+        },
+        {
+            topic: "Continuidad con Límites Trigonométricos",
+            text: "Dada la función: <br> \\( f(x) = \\begin{cases} \\frac{\\sin(3x)}{x}, & \\text{si } x \\neq 0 \\\\ k, & \\text{si } x = 0 \\end{cases} \\) <br> Encuentra el valor de <strong>\\( k \\)</strong> para que la función sea continua en \\( x = 0 \\).",
+            answers: ["3"],
+            hints: [
+                "Pista 1: Por definición de continuidad, se debe cumplir que el valor de la función en el punto sea igual al límite de la función en el punto.",
+                "Pista 2: Por un lado, \\( f(0) = k \\). Por otro lado, debes calcular \\( \\lim_{x \\to 0} \\frac{\\sin(3x)}{x} \\).",
+                "Pista 3: Multiplica y divide el límite por 3 para aplicar el límite notable del seno."
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. La condición matemática es: \\( f(0) = \\lim_{x \\to 0} f(x) \\).<br>2. Evaluamos la función en el punto: \\( f(0) = k \\).<br>3. Calculamos el límite (utilizando la rama para \\( x \\neq 0 \\)):<br>\\[ \\lim_{x \\to 0} \\frac{\\sin(3x)}{x} \\]<br>Multiplicamos numerador y denominador por 3:<br>\\[ \\lim_{x \\to 0} \\frac{3\\sin(3x)}{3x} = 3 \\cdot \\lim_{x \\to 0} \\frac{\\sin(3x)}{3x} = 3(1) = 3 \\]<br>4. Igualamos ambos resultados: \\( k = 3 \\)."
+        },
+        {
+            topic: "Magnitud de Salto en Discontinuidad Inevitable",
+            text: "Para la función \\( f(x) = \\frac{|x - 4|}{x - 4} \\), se sabe que existe una discontinuidad de salto en \\( x = 4 \\). Calcula la <strong>magnitud geométrica del salto</strong> (la distancia absoluta entre el límite por la izquierda y el límite por la derecha).",
+            answers: ["2"],
+            hints: [
+                "Pista 1: Calcula el límite lateral derecho (\\( x > 4 \\)). Si \\( x > 4 \\), el valor absoluto queda positivo: \\( (x-4)/(x-4) = 1 \\).",
+                "Pista 2: Calcula el límite lateral izquierdo (\\( x < 4 \\)). Si \\( x < 4 \\), el valor absoluto saca un signo menos: \\( -(x-4)/(x-4) = -1 \\).",
+                "Pista 3: La magnitud del salto es la diferencia absoluta entre estos dos límites: \\( |L_{derecho} - L_{izquierdo}| \\)."
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. Calculamos los límites laterales en el punto de ruptura \\( x = 4 \\):<br>Límite por la derecha (\\( x \\to 4^+ \\)):<br>\\[ \\lim_{x \\to 4^+} \\frac{x - 4}{x - 4} = 1 \\]<br>Límite por la izquierda (\\( x \\to 4^- \\)):<br>\\[ \\lim_{x \\to 4^-} \\frac{-(x - 4)}{x - 4} = -1 \\]<br>2. Como los límites laterales existen pero son diferentes, se clasifica como discontinuidad de salto finito (inevitable).<br>3. La magnitud del salto se calcula como la distancia entre estos límites:<br>\\[ \\text{Salto} = |1 - (-1)| = |1 + 1| = 2 \\]"
+        },
+        {
+            topic: "Discontinuidad Infinita (Límites Unilaterales con Exponenciales)",
+            text: "Evalúa analíticamente el siguiente límite por la izquierda para determinar el comportamiento asintótico: <br><br> \\( \\lim_{x \\to 0^-} e^{1/x} \\)",
+            answers: ["0"],
+            hints: [
+                "Pista 1: Empieza analizando el comportamiento del exponente \\( \\frac{1}{x} \\) cuando \\( x \\) se acerca a 0 por valores negativos (ej. -0.01, -0.0001).",
+                "Pista 2: El límite \\( \\lim_{x \\to 0^-} \\frac{1}{x} = -\\infty \\).",
+                "Pista 3: Ahora piensa en la función exponencial base e. Si su exponente se va hacia menos infinito (\\( e^{-\\infty} \\)), ¿hacia dónde va toda la función?"
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. Analizamos la tendencia del argumento exponente \\( u(x) = \\frac{1}{x} \\) por la izquierda de 0:<br>\\[ \\lim_{x \\to 0^-} \\frac{1}{x} = -\\infty \\]<br>2. Evaluamos la función exponencial completa con este comportamiento:<br>\\[ \\lim_{x \\to 0^-} e^{1/x} = e^{-\\infty} \\]<br>3. Por las propiedades de la función exponencial, \\( e^{-\\infty} \\) es equivalente a \\( \\lim_{u \\to \\infty} \\frac{1}{e^u} \\), cuyo denominador crece sin medida, haciendo que la fracción se acerque a cero.<br>\\[ \\lim_{x \\to 0^-} e^{1/x} = 0 \\]<br><em>Nota para análisis de discontinuidad: Si el límite fuera por la derecha (\\( 0^+ \\)), el resultado sería \\( +\\infty \\), creando una discontinuidad esencial (infinita) en x=0.</em>"
+        },
+        {
+            topic: "Continuidad del Valor Absoluto",
+            text: "Para la función \\( f(x) = |x - 3| \\), se desea encontrar todos los puntos de discontinuidad en los números reales. Si la función es continua en todo \\( \\mathbb{R} \\), ingresa el número <strong>0</strong>. Si tiene un punto de discontinuidad, ingresa dicho punto numérico.",
+            answers: ["0"],
+            hints: [
+                "Pista 1: Recuerda la teoría: La función valor absoluto \\( f(x) = |g(x)| \\) es continua en todos los puntos donde \\( g(x) \\) es continua.",
+                "Pista 2: La función polinómica interna \\( g(x) = x - 3 \\) es una línea recta. ¿Tienen las líneas rectas saltos, huecos o asíntotas?",
+                "Pista 3: Muchos estudiantes confunden el \"pico\" o \"vértice\" de la gráfica en V (que está en x=3) con una discontinuidad. Ese pico afecta la derivabilidad, pero ¿afecta la continuidad?"
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. Analizamos la función interna \\( g(x) = x - 3 \\). Es un polinomio, por lo tanto es continua para todo número real.<br>2. El teorema de continuidad de funciones compuestas establece que si \\( g \\) es continua en \\( c \\) y la función valor absoluto es continua en \\( g(c) \\), entonces la composición \\( |g(x)| \\) es continua en \\( c \\).<br>3. El punto \\( x = 3 \\) es donde la gráfica hace un quiebre brusco (un pico). Para verificarlo formalmente:<br>\\( f(3) = 0 \\)<br>\\( \\lim_{x \\to 3^-} |x-3| = 0 \\)<br>\\( \\lim_{x \\to 3^+} |x-3| = 0 \\)<br>Como los tres valores coinciden, es continua en x=3.<br>La función no tiene puntos de discontinuidad, así que respondemos 0 según las instrucciones."
+        },
+        {
+            topic: "Identificación de Asintotas",
+            text: "Encuentra el valor exacto de \\( x \\) donde la función \\( f(x) = \\frac{2x}{x^2 - 25} \\) tiene una <strong>discontinuidad infinita (asíntota vertical) positiva</strong>, es decir, donde \\( x > 0 \\).",
+            answers: ["5"],
+            hints: [
+                "Pista 1: Las discontinuidades infinitas o asíntotas verticales ocurren donde el denominador es cero y el numerador es distinto de cero.",
+                "Pista 2: Iguala el denominador a cero: \\( x^2 - 25 = 0 \\). Factoriza como diferencia de cuadrados.",
+                "Pista 3: Obtendrás dos soluciones. Elige la solución que es estrictamente positiva."
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. Buscamos los puntos donde la función no está definida igualando el denominador a cero:<br>\\[ x^2 - 25 = 0 \\]<br>\\[ (x - 5)(x + 5) = 0 \\]<br>\\[ x = 5, \\quad x = -5 \\]<br>2. Verificamos el numerador en ambos puntos para descartar \"huecos\" (discontinuidades removibles):<br>Para \\( x=5 \\), num = 10 (\\( \\neq 0 \\)). Asíntota en \\( x=5 \\).<br>Para \\( x=-5 \\), num = -10 (\\( \\neq 0 \\)). Asíntota en \\( x=-5 \\).<br>3. El enunciado solicita específicamente la asíntota vertical que se encuentra en la región positiva (\\( x > 0 \\)).<br>La respuesta es \\( x = 5 \\)."
+        }
+    ]; // Fin del array de preguntas
+
+    let currentQIndex = 0;
+    let hintIndex = 0;
+
+    function initApp() {
+        currentQIndex = 0;
+        displayQuestion();
+    }
+
+    function displayQuestion() {
+        const q = questions[currentQIndex];
+        document.getElementById('topic-badge').innerText = q.topic;
+        document.getElementById('question-text').innerHTML = q.text;
+        
+        // Reset de la interfaz
+        document.getElementById('student-answer').value = '';
+        document.getElementById('feedback-area').style.display = 'none';
+        document.getElementById('hint-area').style.display = 'none';
+        document.getElementById('solution-area').style.display = 'none';
+        hintIndex = 0;
+        
+        // Renderizar las matemáticas de MathJax
+        if (window.MathJax) {
+            MathJax.typesetPromise();
+        }
+    }
+
+    function checkAnswer() {
+        const studentAnsRaw = document.getElementById('student-answer').value;
+        const studentAnsClean = studentAnsRaw.toLowerCase().replace(/\s/g, '');
+        const q = questions[currentQIndex];
+        const feedback = document.getElementById('feedback-area');
+        
+        if(studentAnsClean === '') {
+            feedback.innerHTML = "Por favor, ingresa una respuesta antes de comprobar.";
+            feedback.className = "math-feedback feedback-incorrect";
+            feedback.style.display = 'block';
+            return;
+        }
+
+        let isCorrect = false;
+        for(let i=0; i < q.answers.length; i++) {
+            if(studentAnsClean === q.answers[i]) {
+                isCorrect = true;
+                break;
+            }
+        }
+
+        if (isCorrect) {
+            feedback.innerHTML = "<strong>¡Excelente trabajo!</strong> Tu respuesta es completamente correcta.";
+            feedback.className = "math-feedback feedback-correct";
+        } else {
+            feedback.innerHTML = `<strong>Respuesta incorrecta.</strong> Te sugerimos repasar a fondo el tópico: <em>${q.topic}</em> en el material de estudio. Utiliza el botón de pistas si necesitas guía paso a paso.`;
+            feedback.className = "math-feedback feedback-incorrect";
+        }
+        feedback.style.display = 'block';
+    }
+
+    function showHint() {
+        const q = questions[currentQIndex];
+        const hintBox = document.getElementById('hint-area');
+        
+        if (hintIndex < q.hints.length) {
+            let currentHintsHTML = "";
+            for(let i=0; i<=hintIndex; i++){
+                currentHintsHTML += "<p>" + q.hints[i] + "</p>";
+            }
+            hintBox.innerHTML = currentHintsHTML;
+            hintBox.style.display = 'block';
+            hintIndex++;
+            
+            if (window.MathJax) {
+                MathJax.typesetPromise();
+            }
+        } else {
+            hintBox.innerHTML += "<p><em>No hay más pistas disponibles. Intenta ver la solución completa para corregir errores.</em></p>";
+        }
+    }
+
+    function showSolution() {
+        const solutionBox = document.getElementById('solution-area');
+        const q = questions[currentQIndex];
+        solutionBox.innerHTML = q.solution;
+        solutionBox.style.display = 'block';
+        
+        if (window.MathJax) {
+            MathJax.typesetPromise();
+        }
+    }
+
+    function loadNextQuestion() {
+        currentQIndex++;
+        if (currentQIndex >= questions.length) {
+            currentQIndex = 0; 
+        }
+        displayQuestion();
+    }
+
+    setTimeout(initApp, 500);
+</script>

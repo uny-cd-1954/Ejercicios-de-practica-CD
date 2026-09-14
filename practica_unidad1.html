@@ -1,0 +1,680 @@
+<!-- Carga de MathJax para renderizar fórmulas matemáticas en Moodle -->
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<style>
+    .math-app-container {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        max-width: 700px;
+        margin: 20px auto;
+        padding: 25px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        background-color: #f8f9fa;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .math-header {
+        text-align: center;
+        color: #2c3e50;
+        border-bottom: 2px solid #2980b9;
+        padding-bottom: 10px;
+        margin-bottom: 20px;
+    }
+    .math-topic-badge {
+        display: inline-block;
+        background-color: #d6eaf8;
+        color: #21618c;
+        padding: 5px 12px;
+        border-radius: 15px;
+        font-size: 0.85em;
+        font-weight: bold;
+        margin-bottom: 15px;
+    }
+    .math-question {
+        font-size: 1.1em;
+        color: #333;
+        margin-bottom: 20px;
+        line-height: 1.6;
+    }
+    .math-input-group {
+        margin-bottom: 20px;
+    }
+    .math-input-group input {
+        padding: 10px;
+        font-size: 1em;
+        width: 60%;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+    }
+    .math-btn {
+        padding: 10px 15px;
+        font-size: 1em;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        margin-right: 5px;
+        margin-bottom: 5px;
+        color: white;
+        transition: background 0.3s;
+    }
+    .btn-submit { background-color: #27ae60; }
+    .btn-submit:hover { background-color: #2ecc71; }
+    .btn-hint { background-color: #f39c12; }
+    .btn-hint:hover { background-color: #f1c40f; }
+    .btn-solution { background-color: #e74c3c; }
+    .btn-solution:hover { background-color: #c0392b; }
+    .btn-next { background-color: #34495e; width: 100%; margin-top: 20px; }
+    
+    .math-feedback {
+        margin-top: 15px;
+        padding: 15px;
+        border-radius: 5px;
+        display: none;
+    }
+    .feedback-correct { background-color: #d5f5e3; color: #145a32; border-left: 5px solid #27ae60; }
+    .feedback-incorrect { background-color: #fdedec; color: #78281f; border-left: 5px solid #e74c3c; }
+    .feedback-hint { background-color: #fef9e7; color: #7d6608; border-left: 5px solid #f1c40f; margin-top: 10px; }
+    .math-solution-box {
+        margin-top: 20px;
+        padding: 15px;
+        background-color: #fff;
+        border: 1px dashed #7f8c8d;
+        display: none;
+        overflow-x: auto;
+    }
+    .progress-bar {
+        width: 100%;
+        height: 4px;
+        background-color: #ecf0f1;
+        border-radius: 2px;
+        margin-top: 10px;
+        overflow: hidden;
+    }
+    .progress-fill {
+        height: 100%;
+        background-color: #2980b9;
+        transition: width 0.3s ease;
+    }
+</style>
+
+<div class="math-app-container">
+    <div class="math-header">
+        <h2>Práctica: Unidad I - Funciones y Reales</h2>
+        <div id="progress-text" style="font-size:0.9em; color:#7f8c8d; margin-top:5px;">Ejercicio 1 de 30</div>
+            <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width: 3.33%;"></div></div>
+    </div>
+    
+    <div id="topic-badge" class="math-topic-badge">Tema</div>
+    <div id="question-text" class="math-question">Cargando pregunta...</div>
+    
+    <div class="math-input-group">
+        <input type="text" id="student-answer" placeholder="Escribe tu respuesta aquí...">
+        <button class="math-btn btn-submit" onclick="checkAnswer()">Comprobar Respuesta</button>
+    </div>
+    
+    <div>
+        <button class="math-btn btn-hint" onclick="showHint()">Pedir Pista</button>
+        <button class="math-btn btn-solution" onclick="showSolution()">Mostrar Solución Paso a Paso</button>
+    </div>
+    
+    <div id="feedback-area" class="math-feedback"></div>
+    <div id="hint-area" class="math-feedback feedback-hint"></div>
+    <div id="solution-area" class="math-solution-box"></div>
+    
+    <button class="math-btn btn-next" onclick="loadNextQuestion()">Siguiente Ejercicio</button>
+</div>
+
+<script>
+    // Base de datos de ejercicios - Unidad I con Función Inversa
+    const questions = [
+                {
+            topic: "Intervalos en los Reales",
+            text: "Sean los intervalos \\( A = [-3, 5) \\) y \\( B = (0, 8] \\). Determina el intervalo resultante de la intersección \\( A \\cap B \\). <br><small><em>(Instrucción: Escribe tu respuesta usando paréntesis o corchetes y una coma sin espacios. Ejemplo: (1,4] )</em></small>",
+            answers: ["(0,5)"],
+            hints: [
+                "Pista 1: La intersección son los elementos comunes que pertenecen a ambos intervalos al mismo tiempo.",
+                "Pista 2: Dibuja una recta real. \\( A \\) va desde -3 (incluido) hasta 5 (sin incluir). \\( B \\) va desde 0 (sin incluir) hasta 8 (incluido).",
+                "Pista 3: La zona donde se superponen ambos va del 0 al 5. Observa si sus extremos están abiertos o cerrados en esa superposición."
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. El intervalo \\( A \\) incluye los números \\( -3 \\leq x < 5 \\).<br>2. El intervalo \\( B \\) incluye los números \\( 0 < x \\leq 8 \\).<br>3. La intersección exige que se cumplan ambas condiciones simultáneamente: los números deben ser mayores estrictamente que 0 y menores estrictamente que 5.<br>\\[ A \\cap B = (0, 5) \\]"
+        },
+        {
+            topic: "Inecuaciones Lineales Fraccionarias",
+            text: "Resuelve: \\( \\frac{2x - 1}{3} - \\frac{x + 2}{2} \\leq 1 \\). <br><small><em>(Instrucción: Ingresa tu respuesta en la forma x<=a o x>=a. Ejemplo: x<=-5)</em></small>",
+            answers: ["x<=14"],
+            hints: [
+                "Pista 1: Elimina los denominadores multiplicando toda la inecuación por el mínimo común múltiplo (MCM) de 3 y 2, que es 6.",
+                "Pista 2: Te quedará \\( 2(2x - 1) - 3(x + 2) \\leq 6 \\). Ten cuidado con el signo menos antes del 3.",
+                "Pista 3: Desarrolla: \\( 4x - 2 - 3x - 6 \\leq 6 \\) y despeja la variable \\( x \\)."
+            ],
+            solution: "<strong>Procedimiento:</strong><br>\\[ \\frac{2x - 1}{3} - \\frac{x + 2}{2} \\leq 1 \\]<br>Multiplicamos todo por 6:<br>\\[ 2(2x - 1) - 3(x + 2) \\leq 6(1) \\]<br>\\[ 4x - 2 - 3x - 6 \\leq 6 \\]<br>Agrupamos términos semejantes:<br>\\[ (4x - 3x) - 8 \\leq 6 \\]<br>\\[ x - 8 \\leq 6 \\]<br>\\[ x \\leq 14 \\]"
+        },
+        {
+            topic: "Inecuaciones Simultáneas (Dobles)",
+            text: "Considera la inecuación doble \\( -4 < 3x + 2 \\leq 11 \\). ¿Cuál es la suma de todos los **números enteros** que pertenecen al conjunto solución?",
+            answers: ["5"],
+            hints: [
+                "Pista 1: Resuelve la inecuación despejando \\( x \\) en el medio. Primero, resta 2 en todas las partes de la desigualdad.",
+                "Pista 2: Te quedará \\( -6 < 3x \\leq 9 \\). Ahora divide todo entre 3.",
+                "Pista 3: El intervalo solución es \\( -2 < x \\leq 3 \\). Identifica qué números enteros caen allí y súmalos."
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. Restamos 2 en los tres miembros:<br>\\[ -4 - 2 < 3x + 2 - 2 \\leq 11 - 2 \\]<br>\\[ -6 < 3x \\leq 9 \\]<br>2. Dividimos entre 3 (como es positivo, las desigualdades no cambian):<br>\\[ -2 < x \\leq 3 \\]<br>3. Los enteros en este intervalo \\( (-2, 3] \\) son: \\( -1, 0, 1, 2, 3 \\) (Nota que el -2 no se incluye).<br>4. Sumamos estos valores:<br>\\[ -1 + 0 + 1 + 2 + 3 = 5 \\]"
+        },
+        {
+            topic: "Inecuaciones Cuadráticas",
+            text: "Halla el conjunto solución de \\( x^2 - x - 6 > 0 \\). ¿Cuál es el <strong>menor entero positivo</strong> que forma parte del conjunto solución?",
+            answers: ["4"],
+            hints: [
+                "Pista 1: Factoriza el polinomio buscando dos números que multiplicados den -6 y sumados den -1.",
+                "Pista 2: La factorización es \\( (x - 3)(x + 2) > 0 \\). Las raíces críticas son \\( x = 3 \\) y \\( x = -2 \\).",
+                "Pista 3: Usa el método del cementerio (prueba de signos en intervalos). La solución son los intervalos donde el producto es positivo. Luego, busca el menor entero positivo en esa zona."
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. Factorizamos la expresión cuadrática:<br>\\[ (x - 3)(x + 2) > 0 \\]<br>2. Puntos críticos: \\( x = 3, x = -2 \\).<br>3. Intervalos a evaluar: \\( (-\\infty, -2) \\), \\( (-2, 3) \\), \\( (3, \\infty) \\).<br>4. Tomando valores de prueba descubrimos que la expresión es positiva en \\( (-\\infty, -2) \\cup (3, \\infty) \\).<br>5. Nos piden el menor entero positivo de la solución. Los enteros positivos posibles están en \\( (3, \\infty) \\). Como el 3 no está incluido, el menor es el 4."
+        },
+        {
+            topic: "Inecuaciones Cuadráticas",
+            text: "Resuelve la inecuación \\( 2x^2 + 5x - 3 \\leq 0 \\). ¿Cuántos números **enteros** (incluyendo el cero) pertenecen al conjunto solución?",
+            answers: ["4"],
+            hints: [
+                "Pista 1: Factoriza utilizando el método de Ruffini, fórmula cuadrática o aspa simple para hallar las raíces críticas.",
+                "Pista 2: Las raíces son \\( x = \\frac{1}{2} \\) y \\( x = -3 \\).",
+                "Pista 3: Como es \\( \\leq 0 \\), el conjunto solución es el intervalo cerrado entre las dos raíces. Cuenta todos los enteros que hay desde el -3 hasta el 1/2."
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. Hallamos las raíces de \\( 2x^2 + 5x - 3 = 0 \\) mediante la resolvente o factorización:<br>\\[ (2x - 1)(x + 3) = 0 \\implies x = 1/2, \\ x = -3 \\]<br>2. Al ser una parábola cóncava hacia arriba (\\(a=2>0\\)), es menor o igual a cero entre sus raíces.<br>3. El conjunto solución es el intervalo cerrado \\( [-3, 0.5] \\).<br>4. Los números enteros dentro de este intervalo son: \\( -3, -2, -1, 0 \\).<br>En total hay 4 números enteros."
+        },
+        {
+            topic: "Inecuaciones Cuadráticas (Discriminante negativo)",
+            text: "Resuelve \\( x^2 + 2x + 5 < 0 \\). <br><small><em>(Instrucción: Si no hay solución en los números reales, escribe la palabra 'vacio', en minúsculas y sin acentos)</em></small>",
+            answers: ["vacio"],
+            hints: [
+                "Pista 1: Calcula el discriminante (\\( \\Delta = b^2 - 4ac \\)) de la ecuación cuadrática asociada.",
+                "Pista 2: \\( \\Delta = (2)^2 - 4(1)(5) = 4 - 20 = -16 \\). Al ser negativo, la parábola no corta el eje x.",
+                "Pista 3: Como el coeficiente de \\( x^2 \\) es positivo, toda la parábola está por encima del eje x. Nunca será menor que cero."
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. Analizamos el discriminante:<br>\\[ \\Delta = b^2 - 4ac = 4 - 20 = -16 < 0 \\]<br>2. Como \\( \\Delta < 0 \\) y el coeficiente principal (\\(a=1\\)) es positivo, el trinomio \\( x^2 + 2x + 5 \\) es estrictamente positivo para cualquier valor real de \\( x \\).<br>3. La inecuación pide los valores para los cuales es estrictamente menor a cero (\\( < 0 \\)).<br>Por lo tanto, no existe ningún número real que cumpla esto. El conjunto solución es el conjunto vacío."
+        },
+        {
+            topic: "Inecuaciones Cúbicas",
+            text: "Encuentra el conjunto solución de \\( x^3 - 4x \\geq 0 \\). Como parte de la respuesta, escribe únicamente el <strong>intervalo cerrado finito</strong> que forma parte de la solución final. <br><small><em>(Instrucción: Ejemplo de formato: [-1,1] )</em></small>",
+            answers: ["[-2,0]"],
+            hints: [
+                "Pista 1: Factoriza la expresión. Primero saca factor común \\( x \\).",
+                "Pista 2: Te quedará \\( x(x^2 - 4) \\geq 0 \\). Ahora aplica diferencia de cuadrados.",
+                "Pista 3: Las tres raíces críticas son \\( -2, 0 \\) y \\( 2 \\). Evalúa los signos en los intervalos generados."
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. Factorizamos el polinomio cúbico:<br>\\[ x^3 - 4x \\geq 0 \\]<br>\\[ x(x^2 - 4) \\geq 0 \\]<br>\\[ x(x - 2)(x + 2) \\geq 0 \\]<br>2. Puntos críticos: \\( x = -2, x = 0, x = 2 \\).<br>3. Armamos los intervalos y tomamos valores de prueba:<br>- \\( (-\\infty, -2) \\): Signo (-) <br>- \\( (-2, 0) \\): Signo (+) <br>- \\( (0, 2) \\): Signo (-) <br>- \\( (2, \\infty) \\): Signo (+) <br>4. Como es \\( \\geq 0 \\), tomamos las zonas positivas (incluyendo los extremos). Solución total: \\( [-2, 0] \\cup [2, \\infty) \\).<br>El intervalo cerrado finito es \\( [-2, 0] \\)."
+        },
+        {
+            topic: "Inecuaciones Cúbicas (Agrupación)",
+            text: "Resuelve \\( x^3 - 3x^2 - 4x + 12 < 0 \\). ¿Cuál es el <strong>mayor entero negativo</strong> que pertenece al conjunto solución?",
+            answers: ["-3"],
+            hints: [
+                "Pista 1: Factoriza por agrupación de términos. Agrupa los dos primeros y los dos últimos: \\( x^2(x - 3) - 4(x - 3) < 0 \\).",
+                "Pista 2: Saca factor común \\( (x - 3) \\), quedando \\( (x^2 - 4)(x - 3) < 0 \\), que se factoriza aún más a \\( (x - 2)(x + 2)(x - 3) < 0 \\).",
+                "Pista 3: Analiza los signos. Las raíces son -2, 2 y 3. El intervalo negativo hacia la izquierda es \\( (-\\infty, -2) \\). ¿Cuál es el entero negativo más cercano a -2 allí?"
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. Factorizamos por agrupación:<br>\\[ (x^3 - 3x^2) - (4x - 12) < 0 \\]<br>\\[ x^2(x - 3) - 4(x - 3) < 0 \\]<br>\\[ (x^2 - 4)(x - 3) < 0 \\]<br>\\[ (x - 2)(x + 2)(x - 3) < 0 \\]<br>2. Raíces críticas: \\( x=-2, x=2, x=3 \\).<br>3. Intervalos negativos (solución): \\( (-\\infty, -2) \\cup (2, 3) \\).<br>4. Se nos pide el mayor entero negativo de la solución. Ese debe pertenecer al intervalo \\( (-\\infty, -2) \\). El entero negativo más grande que es estrictamente menor a -2 es el -3."
+        },
+        {
+            topic: "Inecuaciones con Valor Absoluto (Menor que)",
+            text: "Resuelve: \\( |2x - 5| \\leq 7 \\). ¿Cuál es la <strong>suma</strong> del mayor y el menor valor entero que puede tomar \\( x \\)?",
+            answers: ["5"],
+            hints: [
+                "Pista 1: Por propiedades de valor absoluto, \\( |u| \\leq a \\) se transforma en \\( -a \\leq u \\leq a \\).",
+                "Pista 2: Aplica esto: \\( -7 \\leq 2x - 5 \\leq 7 \\) y despeja \\( x \\) sumando 5 en todas partes y luego dividiendo entre 2.",
+                "Pista 3: El intervalo resultante es \\( -1 \\leq x \\leq 6 \\). Suma el límite inferior y superior, que en este caso coinciden con enteros."
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. Aplicamos la propiedad del valor absoluto para inecuaciones tipo \"menor o igual\":<br>\\[ -7 \\leq 2x - 5 \\leq 7 \\]<br>2. Sumamos 5 en todos los miembros:<br>\\[ -7 + 5 \\leq 2x \\leq 7 + 5 \\]<br>\\[ -2 \\leq 2x \\leq 12 \\]<br>3. Dividimos entre 2:<br>\\[ -1 \\leq x \\leq 6 \\]<br>4. El menor valor entero posible es -1 y el mayor es 6. Su suma es:<br>\\[ -1 + 6 = 5 \\]"
+        },
+        {
+            topic: "Inecuaciones con Valor Absoluto (Mayor que)",
+            text: "Resuelve: \\( |3x + 1| > 10 \\). ¿Cuál es el <strong>menor entero positivo</strong> que pertenece a la solución?",
+            answers: ["4"],
+            hints: [
+                "Pista 1: La propiedad indica que \\( |u| > a \\) se separa en dos casos: \\( u > a \\) Ó \\( u < -a \\).",
+                "Pista 2: Resuelve \\( 3x + 1 > 10 \\) y \\( 3x + 1 < -10 \\).",
+                "Pista 3: Obtendrás \\( x > 3 \\) y \\( x < -11/3 \\). Busca el entero positivo más pequeño que cumpla con la primera condición."
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. Separamos en dos inecuaciones por la propiedad del valor absoluto:<br>Caso A: \\( 3x + 1 > 10 \\)<br>Caso B: \\( 3x + 1 < -10 \\)<br>2. Resolvemos el Caso A:<br>\\[ 3x > 9 \\implies x > 3 \\]<br>3. Resolvemos el Caso B:<br>\\[ 3x < -11 \\implies x < -11/3 \\approx -3.66 \\]<br>4. La solución general es \\( (-\\infty, -11/3) \\cup (3, \\infty) \\).<br>5. Se pide el menor entero positivo. Este debe estar en \\( (3, \\infty) \\). Como el 3 está excluido, el entero es 4."
+        },
+        {
+            topic: "Ecuaciones con Valor Absoluto (Cuadráticas)",
+            text: "Dada la ecuación \\( |x^2 - 4| = 5 \\), ingresa el <strong>producto</strong> de todas las soluciones reales de \\( x \\).",
+            answers: ["-9"],
+            hints: [
+                "Pista 1: Separa en dos casos: \\( x^2 - 4 = 5 \\) y \\( x^2 - 4 = -5 \\).",
+                "Pista 2: El primer caso da \\( x^2 = 9 \\). El segundo da \\( x^2 = -1 \\).",
+                "Pista 3: El segundo caso no tiene solución en los reales. Resuelve el primero, obtén las dos soluciones de \\( x \\) y multiplícalas."
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. Dividimos en dos ecuaciones:<br>Ecuación 1: \\( x^2 - 4 = 5 \\)<br>Ecuación 2: \\( x^2 - 4 = -5 \\)<br>2. Resolvemos Ecuación 1:<br>\\[ x^2 = 9 \\implies x = 3, \\ x = -3 \\]<br>3. Resolvemos Ecuación 2:<br>\\[ x^2 = -1 \\] (No tiene solución en los números reales).<br>4. Las únicas soluciones reales son 3 y -3. Su producto es:<br>\\[ (3)(-3) = -9 \\]"
+        },
+        {
+            topic: "Dominio de Funciones Racionales",
+            text: "Determina el dominio de \\( f(x) = \\frac{2x+1}{x^2 - x - 12} \\). Ingresa la <strong>suma</strong> de los valores reales que NO pertenecen al dominio.",
+            answers: ["1"],
+            hints: [
+                "Pista 1: El denominador no puede ser cero. Debes encontrar qué valores de \\( x \\) hacen que \\( x^2 - x - 12 = 0 \\).",
+                "Pista 2: Factoriza el denominador: \\( (x - 4)(x + 3) = 0 \\).",
+                "Pista 3: Las restricciones son \\( x \\neq 4 \\) y \\( x \\neq -3 \\). Suma estos dos valores restrictivos."
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. La función racional no está definida cuando su denominador es cero. Planteamos la ecuación:<br>\\[ x^2 - x - 12 = 0 \\]<br>2. Factorizamos buscando dos números que multipliquen -12 y sumen -1:<br>\\[ (x - 4)(x + 3) = 0 \\]<br>3. Los valores que anulan el denominador son \\( x = 4 \\) y \\( x = -3 \\). El dominio es \\( \\mathbb{R} - \\{-3, 4\\} \\).<br>4. La suma de estos valores prohibidos es:<br>\\[ 4 + (-3) = 1 \\]"
+        },
+        {
+            topic: "Dominio de Funciones Irracionales",
+            text: "Halla el dominio de \\( f(x) = \\sqrt{8 - 2x} \\). ¿Cuál es el <strong>mayor valor real (entero)</strong> que pertenece al dominio de \\( f \\)?",
+            answers: ["4"],
+            hints: [
+                "Pista 1: El argumento de una raíz cuadrada en los reales debe ser mayor o igual a cero.",
+                "Pista 2: Plantea la inecuación \\( 8 - 2x \\geq 0 \\).",
+                "Pista 3: Despeja \\( x \\). Recuerda que si pasas dividiendo un número negativo, la desigualdad se invierte."
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. Para que la raíz cuadrada exista en \\( \\mathbb{R} \\), exigimos que el radicando sea no negativo:<br>\\[ 8 - 2x \\geq 0 \\]<br>2. Restamos 8 en ambos lados:<br>\\[ -2x \\geq -8 \\]<br>3. Dividimos entre -2 e invertimos el sentido de la desigualdad:<br>\\[ x \\leq \\frac{-8}{-2} \\]<br>\\[ x \\leq 4 \\]<br>El dominio es \\( (-\\infty, 4] \\). El mayor valor que puede tomar \\( x \\) es 4."
+        },
+        {
+            topic: "Dominio Mixto (Radical + Racional)",
+            text: "El dominio de la función \\( f(x) = \\frac{\\sqrt{x - 2}}{x - 5} \\) es de la forma \\( [2, 5) \\cup (a, \\infty) \\). ¿Cuál es el valor numérico de la constante <strong>\\( a \\)</strong>?",
+            answers: ["5"],
+            hints: [
+                "Pista 1: Tienes dos restricciones. La primera por la raíz en el numerador: \\( x - 2 \\geq 0 \\).",
+                "Pista 2: La segunda restricción es por el denominador: \\( x - 5 \\neq 0 \\).",
+                "Pista 3: Combina ambas. El valor de \\( x \\) debe ser mayor o igual a 2, pero saltándose el número que hace cero el denominador."
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. Restricción 1 (raíz en numerador):<br>\\[ x - 2 \\geq 0 \\implies x \\geq 2 \\]<br>2. Restricción 2 (denominador no nulo):<br>\\[ x - 5 \\neq 0 \\implies x \\neq 5 \\]<br>3. Intersectando ambas condiciones en la recta real, tomamos todos los números desde el 2 en adelante, pero debemos excluir el 5. <br>4. El dominio en notación de intervalos es:<br>\\[ [2, 5) \\cup (5, \\infty) \\]<br>Comparando con el formato dado en el enunciado, la constante \\( a \\) es 5."
+        },
+        {
+            topic: "Dominio de Funciones Trascendentes (Logaritmos)",
+            text: "Determina el dominio de \\( f(x) = \\ln(9 - x^2) \\). ¿Cuántos <strong>números enteros</strong> pertenecen al dominio de esta función?",
+            answers: ["5"],
+            hints: [
+                "Pista 1: El argumento del logaritmo debe ser estrictamente positivo: \\( 9 - x^2 > 0 \\).",
+                "Pista 2: Multiplica por -1 e invierte la desigualdad: \\( x^2 - 9 < 0 \\). Factoriza como diferencia de cuadrados.",
+                "Pista 3: Las raíces críticas son -3 y 3. El intervalo solución es \\( (-3, 3) \\). Cuenta los números enteros estrictamente dentro de ese rango."
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. Condición de existencia del logaritmo natural:<br>\\[ 9 - x^2 > 0 \\]<br>2. Resolvemos la inecuación cuadrática factorizando:<br>\\[ (3 - x)(3 + x) > 0 \\]<br>3. Los puntos críticos son 3 y -3. Evaluando signos, comprobamos que el producto es positivo cuando \\( x \\) está entre -3 y 3. Dominio: \\( (-3, 3) \\).<br>4. Los números enteros en este intervalo abierto (sin incluir extremos) son: -2, -1, 0, 1, 2.<br>Existen 5 números enteros en total."
+        },
+        {
+            topic: "Rango de Funciones Cuadráticas",
+            text: "El rango de la función \\( f(x) = x^2 - 4x + 7 \\) es un intervalo de la forma \\( [k, \\infty) \\). ¿Cuál es el valor exacto de la constante <strong>\\( k \\)</strong>?",
+            answers: ["3"],
+            hints: [
+                "Pista 1: El rango de una parábola cóncava hacia arriba (como esta) comienza en la coordenada \"y\" de su vértice.",
+                "Pista 2: Calcula la coordenada x del vértice usando \\( x = -b / (2a) \\).",
+                "Pista 3: El vértice está en \\( x = 2 \\). Evalúa \\( f(2) \\) para encontrar el valor mínimo \\( k \\)."
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. Observamos que \\( f(x) \\) es una parábola que abre hacia arriba (a=1>0). Su valor mínimo ocurre en el vértice.<br>2. Calculamos la abscisa del vértice:<br>\\[ x_v = \\frac{-b}{2a} = \\frac{-(-4)}{2(1)} = 2 \\]<br>3. Calculamos la ordenada del vértice (el valor mínimo):<br>\\[ y_v = f(2) = (2)^2 - 4(2) + 7 = 4 - 8 + 7 = 3 \\]<br>4. La función toma valores desde 3 hacia el infinito. El rango es \\( [3, \\infty) \\).<br>Por lo tanto, \\( k = 3 \\)."
+        },
+        {
+            topic: "Rango de Funciones Racionales",
+            text: "¿Qué número real <strong>NO</strong> pertenece al rango (recorrido) de la función \\( f(x) = \\frac{3x - 2}{x + 1} \\)?",
+            answers: ["3"],
+            hints: [
+                "Pista 1: Para hallar el rango, iguala la función a 'y': \\( y = \\frac{3x - 2}{x + 1} \\) y despeja la variable 'x'.",
+                "Pista 2: Multiplica cruzado: \\( y(x + 1) = 3x - 2 \\) y agrupa los términos con 'x' de un lado.",
+                "Pista 3: Al despejar x, te quedará una nueva fracción dependiente de 'y'. El valor que haga cero el denominador de esa nueva fracción es el que se excluye del rango."
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. Planteamos \\( y = \\frac{3x - 2}{x + 1} \\) y despejamos \\( x \\).<br>\\[ y(x + 1) = 3x - 2 \\]<br>\\[ yx + y = 3x - 2 \\]<br>2. Agrupamos los términos con \\( x \\):<br>\\[ yx - 3x = -2 - y \\]<br>\\[ x(y - 3) = -(y + 2) \\]<br>\\[ x = \\frac{-(y + 2)}{y - 3} \\]<br>3. Para que \\( x \\) sea un número real, el denominador de esta nueva expresión no puede ser cero:<br>\\[ y - 3 \\neq 0 \\implies y \\neq 3 \\]<br>El número excluido del rango es el 3 (que corresponde a la asíntota horizontal de la función original)."
+        },
+        {
+            topic: "Rango de Funciones Irracionales",
+            text: "Dada la función \\( f(x) = 2 - \\sqrt{x + 1} \\), ¿cuál es el <strong>valor máximo absoluto</strong> que puede tomar esta función en el eje \\( y \\)?",
+            answers: ["2"],
+            hints: [
+                "Pista 1: Piensa en la naturaleza de una raíz cuadrada: \\( \\sqrt{x + 1} \\) siempre devuelve valores mayores o iguales a cero.",
+                "Pista 2: Si a 2 le restas un número que siempre es positivo o cero, el resultado máximo ocurre cuando restas lo menos posible (cero).",
+                "Pista 3: El valor máximo se alcanza cuando la raíz vale 0, lo que ocurre en \\( x = -1 \\). Evalúa \\( f(-1) \\)."
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. Analizamos la función basándonos en la raíz cuadrada.<br>Sabemos por definición que en los reales: \\( \\sqrt{x + 1} \\geq 0 \\).<br>2. Multiplicamos por -1 (lo que invierte la desigualdad):<br>\\[ -\\sqrt{x + 1} \\leq 0 \\]<br>3. Sumamos 2 en ambos lados para construir nuestra función original:<br>\\[ 2 - \\sqrt{x + 1} \\leq 2 \\]<br>4. Esto significa que \\( f(x) \\leq 2 \\) para cualquier \\( x \\) en su dominio. Por lo tanto, el rango es \\( (-\\infty, 2] \\) y el valor máximo absoluto es 2."
+        },
+        {
+            topic: "Inecuaciones con Valor Absoluto y Fracciones",
+            text: "Resuelve \\( \\left| \\frac{x - 2}{3} \\right| < 2 \\). ¿Cuántos <strong>números enteros</strong> pertenecen a la solución?",
+            answers: ["11"],
+            hints: [
+                "Pista 1: Transforma a inecuación doble: \\( -2 < \\frac{x - 2}{3} < 2 \\).",
+                "Pista 2: Multiplica todo por 3 para eliminar el denominador.",
+                "Pista 3: Suma 2 en todas las partes. El intervalo que obtengas no incluye los extremos por ser un 'menor estricto'. Cuenta los enteros en ese rango."
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. Aplicamos propiedad de valor absoluto:<br>\\[ -2 < \\frac{x - 2}{3} < 2 \\]<br>2. Multiplicamos por 3:<br>\\[ -6 < x - 2 < 6 \\]<br>3. Sumamos 2:<br>\\[ -4 < x < 8 \\]<br>4. Los números enteros estrictamente entre -4 y 8 son: -3, -2, -1, 0, 1, 2, 3, 4, 5, 6, 7.<br>Al contarlos, vemos que hay 11 números enteros en total."
+        },
+        {
+            topic: "Dominio Mixto Avanzado",
+            text: "El dominio de \\( f(x) = \\frac{1}{\\sqrt{\\ln(x - 1)}} \\) es el intervalo \\( (k, \\infty) \\). Calcula el valor exacto de la constante <strong>\\( k \\)</strong>.",
+            answers: ["2"],
+            hints: [
+                "Pista 1: El argumento del logaritmo debe ser positivo: \\( x - 1 > 0 \\).",
+                "Pista 2: La raíz cuadrada del denominador exige que \\( \\ln(x - 1) \\geq 0 \\), pero como está en un denominador, debe ser ESTRICTAMENTE mayor que cero: \\( \\ln(x - 1) > 0 \\).",
+                "Pista 3: Resuelve \\( \\ln(x - 1) > 0 \\) elevando a la 'e' en ambos lados. Recuerda que \\( e^0 = 1 \\)."
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. Condición para el argumento del logaritmo:<br>\\[ x - 1 > 0 \\implies x > 1 \\]<br>2. Condición para la raíz en el denominador. El radicando debe ser estrictamente positivo para no dividir por cero:<br>\\[ \\ln(x - 1) > 0 \\]<br>3. Aplicamos la función exponencial (base e) en ambos lados para despejar:<br>\\[ e^{\\ln(x - 1)} > e^0 \\]<br>\\[ x - 1 > 1 \\]<br>\\[ x > 2 \\]<br>4. Intersectando ambas condiciones (\\( x>1 \\) y \\( x>2 \\)), predomina la restricción más fuerte: \\( x > 2 \\).<br>El dominio es \\( (2, \\infty) \\). Por lo tanto, \\( k = 2 \\)."
+        },
+    
+        {
+            topic: "Modelos Lineales (Depreciación)",
+            text: "Un equipo de laboratorio se compra por $20,000. Su valor se deprecia linealmente, perdiendo $2,000 cada año. ¿En cuántos años exactos el valor del equipo será de $8,000?",
+            answers: ["6"],
+            hints: [
+                "Pista 1: Modela el valor del equipo en función del tiempo \\( V(t) \\). El valor inicial es la ordenada al origen y la pérdida anual es la pendiente (negativa).",
+                "Pista 2: El modelo es \\( V(t) = 20000 - 2000t \\).",
+                "Pista 3: Iguala el modelo a 8000: \\( 8000 = 20000 - 2000t \\) y despeja \\( t \\)."
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. Planteamos el modelo de depreciación lineal:<br>\\[ V(t) = V_0 - mt \\]<br>\\[ V(t) = 20000 - 2000t \\]<br>2. Queremos saber el tiempo \\( t \\) cuando \\( V(t) = 8000 \\):<br>\\[ 8000 = 20000 - 2000t \\]<br>3. Despejamos \\( t \\):<br>\\[ 2000t = 20000 - 8000 \\]<br>\\[ 2000t = 12000 \\]<br>\\[ t = \\frac{12000}{2000} = 6 \\]<br>Tardará 6 años."
+        },
+        {
+            topic: "Modelos Cuadráticos (Optimización)",
+            text: "Un granjero tiene 100 metros de cerca para construir un corral rectangular a lo largo de un río. No necesita poner cerca en el lado que da al río. ¿Cuál es el <strong>área máxima</strong> (en metros cuadrados) que puede abarcar el corral?",
+            answers: ["1250"],
+            hints: [
+                "Pista 1: Sean \\( x \\) el ancho (perpendicular al río) e \\( y \\) el largo (paralelo al río). La cerca total es \\( 2x + y = 100 \\).",
+                "Pista 2: Despeja \\( y \\): \\( y = 100 - 2x \\). El área es \\( A = x \\cdot y \\). Sustituye \\( y \\) para que el Área dependa solo de \\( x \\).",
+                "Pista 3: \\( A(x) = x(100 - 2x) = 100x - 2x^2 \\). El área máxima ocurre en el vértice de esta parábola. Calcula \\( x = -b / (2a) \\) y evalúa el área."
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. Restricción de la cerca: \\( 2x + y = 100 \\implies y = 100 - 2x \\).<br>2. Función a optimizar (Área):<br>\\[ A(x) = x \\cdot (100 - 2x) = 100x - 2x^2 \\]<br>3. Es una parábola que abre hacia abajo (a = -2). El máximo se ubica en el vértice:<br>\\[ x = \\frac{-b}{2a} = \\frac{-100}{2(-2)} = \\frac{-100}{-4} = 25 \\]<br>4. Si \\( x = 25 \\), el lado paralelo al río es \\( y = 100 - 2(25) = 50 \\).<br>5. El área máxima es \\( A = 25 \\cdot 50 = 1250 \\) m²."
+        },
+        {
+            topic: "Modelos Exponenciales (Crecimiento Poblacional)",
+            text: "Una población de bacterias se modela según \\( P(t) = 500 \\cdot 2^{t/3} \\), donde \\( t \\) está en horas. ¿En cuántas horas la población alcanzará exactamente las 4,000 bacterias?",
+            answers: ["9"],
+            hints: [
+                "Pista 1: Iguala la función a 4000: \\( 4000 = 500 \\cdot 2^{t/3} \\).",
+                "Pista 2: Divide ambos lados entre 500 para aislar la base exponencial.",
+                "Pista 3: Te quedará \\( 8 = 2^{t/3} \\). Expresa el 8 como una potencia de 2 (es decir, \\( 2^3 \\)) e iguala los exponentes."
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. Planteamos la ecuación con \\( P(t) = 4000 \\):<br>\\[ 4000 = 500 \\cdot 2^{t/3} \\]<br>2. Dividimos entre 500:<br>\\[ \\frac{4000}{500} = 2^{t/3} \\]<br>\\[ 8 = 2^{t/3} \\]<br>3. Igualamos bases, sabiendo que \\( 8 = 2^3 \\):<br>\\[ 2^3 = 2^{t/3} \\]<br>4. Al tener la misma base, los exponentes deben ser iguales:<br>\\[ 3 = \\frac{t}{3} \\implies t = 9 \\]<br>Pasarán 9 horas."
+        },
+        {
+            topic: "Modelos Logarítmicos (Intensidad Sonora)",
+            text: "El nivel de intensidad sonora en decibeles es \\( \\beta = 10 \\log_{10}\\left(\\frac{I}{I_0}\\right) \\). Si un sonido tiene una intensidad \\( I \\) que es 1000 veces la intensidad mínima \\( I_0 \\) (es decir, \\( I = 1000I_0 \\)), ¿cuál es su nivel en decibeles?",
+            answers: ["30"],
+            hints: [
+                "Pista 1: Sustituye \\( I = 1000I_0 \\) en la fórmula.",
+                "Pista 2: Obtendrás \\( \\frac{1000I_0}{I_0} \\). Los \\( I_0 \\) se cancelan.",
+                "Pista 3: Te queda evaluar \\( 10 \\cdot \\log_{10}(1000) \\). ¿A qué exponente debes elevar 10 para que te dé 1000?"
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. Sustituimos \\( I = 1000I_0 \\) en la fórmula:<br>\\[ \\beta = 10 \\log_{10}\\left(\\frac{1000I_0}{I_0}\\right) \\]<br>2. Simplificamos la fracción cancelando \\( I_0 \\):<br>\\[ \\beta = 10 \\log_{10}(1000) \\]<br>3. Evaluamos el logaritmo en base 10. Como \\( 1000 = 10^3 \\), entonces \\( \\log_{10}(1000) = 3 \\).<br>\\[ \\beta = 10(3) = 30 \\]<br>El sonido tiene 30 decibeles."
+        },
+
+        // --- FUNCIONES INVERSAS ---
+        {
+            topic: "Evaluación de Funciones Inversas",
+            text: "Dada la función \\( f(x) = x^3 + 2x - 1 \\), halla el valor de \\( f^{-1}(2) \\). <br><small><em>(Nota: No intentes despejar la inversa, resuelve por definición)</em></small>",
+            answers: ["1"],
+            hints: [
+                "Pista 1: Buscar \\( f^{-1}(2) = x \\) es matemáticamente equivalente a buscar para qué valor de \\( x \\) se cumple que \\( f(x) = 2 \\).",
+                "Pista 2: Iguala la función original: \\( x^3 + 2x - 1 = 2 \\).",
+                "Pista 3: Iguala a cero: \\( x^3 + 2x - 3 = 0 \\). Busca una raíz entera sencilla por inspección (prueba con el 1 o el -1)."
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. Por definición de función inversa, si \\( f^{-1}(2) = a \\), entonces \\( f(a) = 2 \\).<br>2. Planteamos la ecuación:<br>\\[ x^3 + 2x - 1 = 2 \\]<br>\\[ x^3 + 2x - 3 = 0 \\]<br>3. Por inspección, evaluamos números enteros pequeños. Probemos con \\( x = 1 \\):<br>\\[ (1)^3 + 2(1) - 3 = 1 + 2 - 3 = 0 \\]<br>Dado que \\( x = 1 \\) satisface la ecuación (y siendo estrictamente creciente tiene inversa única), concluimos que:<br>\\[ f^{-1}(2) = 1 \\]"
+        },
+        {
+            topic: "Dominio y Rango de la Inversa",
+            text: "Una función biyectiva \\( f(x) \\) tiene como Dominio el intervalo \\( [-5, 8] \\) y como Rango el intervalo \\( [1, 15] \\). ¿Cuál es el <strong>mayor valor real</strong> que pertenece al dominio de su función inversa \\( f^{-1}(x) \\)?",
+            answers: ["15"],
+            hints: [
+                "Pista 1: Recuerda la propiedad fundamental que relaciona los dominios y rangos de una función y su inversa.",
+                "Pista 2: El Dominio de \\( f^{-1} \\) es exactamente igual al Rango de \\( f \\).",
+                "Pista 3: Identifica el rango de \\( f \\) en el enunciado y extrae su valor más alto."
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. Por propiedades de las funciones inversas, se cumple que:<br>\\[ \\text{Dom}(f^{-1}) = \\text{Rango}(f) \\]<br>\\[ \\text{Rango}(f^{-1}) = \\text{Dom}(f) \\]<br>2. Sabemos por el enunciado que el Rango de \\( f \\) es \\( [1, 15] \\).<br>3. En consecuencia, el Dominio de \\( f^{-1} \\) es el intervalo cerrado \\( [1, 15] \\).<br>4. El mayor valor que pertenece a este conjunto es el 15."
+        },
+        {
+            topic: "Cálculo Algebraico de la Inversa",
+            text: "Dada la función \\( f(x) = \\frac{2x - 1}{x + 3} \\), encuentra su inversa algebraicamente. La función inversa tiene una asíntota vertical en \\( x = k \\). ¿Cuál es el valor de <strong>\\( k \\)</strong>?",
+            answers: ["2"],
+            hints: [
+                "Pista 1: Sustituye \\( f(x) \\) por \\( y \\). Luego multiplica cruzado: \\( y(x + 3) = 2x - 1 \\).",
+                "Pista 2: Distribuye la \\( y \\), agrupa los términos que contengan la variable \\( x \\) en un solo lado y saca factor común \\( x \\).",
+                "Pista 3: Te quedará \\( x(y - 2) = -3y - 1 \\). Despeja \\( x \\). El valor que haga cero el denominador de la nueva expresión es tu asíntota vertical."
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. Planteamos \\( y = \\frac{2x - 1}{x + 3} \\) y despejamos \\( x \\):<br>\\[ y(x + 3) = 2x - 1 \\]<br>\\[ yx + 3y = 2x - 1 \\]<br>2. Agrupamos los términos con \\( x \\):<br>\\[ yx - 2x = -3y - 1 \\]<br>\\[ x(y - 2) = -3y - 1 \\]<br>\\[ x = \\frac{-3y - 1}{y - 2} \\]<br>3. Intercambiamos variables para obtener la inversa:<br>\\[ f^{-1}(x) = \\frac{-3x - 1}{x - 2} \\]<br>4. Esta función racional tiene su asíntota vertical donde el denominador se anula:<br>\\[ x - 2 = 0 \\implies x = 2 \\]<br>El valor de \\( k \\) es 2."
+        },
+        {
+            topic: "Inversa de una Función Exponencial",
+            text: "Dada la función exponencial \\( f(x) = 4^{x-2} + 3 \\). Determina el valor exacto de \\( f^{-1}(7) \\).",
+            answers: ["3"],
+            hints: [
+                "Pista 1: Usa la definición. Resuelve la ecuación \\( 4^{x-2} + 3 = 7 \\).",
+                "Pista 2: Resta 3 a ambos lados para aislar la potencia: \\( 4^{x-2} = 4 \\).",
+                "Pista 3: Todo número está elevado a la 1, así que \\( 4^{x-2} = 4^1 \\). Iguala los exponentes y despeja."
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. Para hallar \\( f^{-1}(7) \\), buscamos el valor de \\( x \\) tal que \\( f(x) = 7 \\).<br>2. Planteamos:<br>\\[ 4^{x-2} + 3 = 7 \\]<br>\\[ 4^{x-2} = 7 - 3 \\]<br>\\[ 4^{x-2} = 4 \\]<br>3. Expresamos el lado derecho con base 4 explícita:<br>\\[ 4^{x-2} = 4^1 \\]<br>4. Al tener bases iguales, igualamos los exponentes:<br>\\[ x - 2 = 1 \\implies x = 3 \\]<br>Por lo tanto, \\( f^{-1}(7) = 3 \\)."
+        },
+
+        // --- FUNCIONES TRIGONOMÉTRICAS ---
+        {
+            topic: "Ecuaciones Trigonométricas Básicas",
+            text: "Encuentra la menor solución positiva (en <strong>grados</strong>) para la ecuación trigonométrica: \\( 2\\sin(x) - 1 = 0 \\).",
+            answers: ["30"],
+            hints: [
+                "Pista 1: Despeja la función seno: \\( \\sin(x) = \\frac{1}{2} \\).",
+                "Pista 2: Pregúntate en qué ángulo del primer cuadrante el seno vale 1/2.",
+                "Pista 3: Es uno de los ángulos notables. Recuerda el triángulo de 30-60-90."
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. Despejamos el seno en la ecuación:<br>\\[ 2\\sin(x) = 1 \\]<br>\\[ \\sin(x) = \\frac{1}{2} \\]<br>2. Buscamos el ángulo \\( x \\). Sabemos por razones trigonométricas de ángulos notables que el seno de 30° es 1/2.<br>3. Existen infinitas soluciones (ej. 150°, 390°, etc.), pero se nos pide la menor solución positiva, la cual está en el primer cuadrante.<br>Respuesta: 30 grados."
+        },
+        {
+            topic: "Periodo de Funciones Trigonométricas",
+            text: "¿Cuál es el periodo fundamental de la función trigonométrica \\( f(x) = 5\\cos(4\\pi x + 2) \\)? <br><small><em>(Ingresa un valor numérico decimal o fracción simplificada)</em></small>",
+            answers: ["1/2", "0.5"],
+            hints: [
+                "Pista 1: El periodo fundamental \\( T \\) de una función como \\( A\\cos(Bx + C) \\) se calcula con la fórmula \\( T = \\frac{2\\pi}{|B|} \\).",
+                "Pista 2: Identifica el valor de \\( B \\). En esta función, \\( B \\) es el coeficiente que multiplica a la \\( x \\).",
+                "Pista 3: \\( B = 4\\pi \\). Sustituye en la fórmula y simplifica cancelando \\( \\pi \\)."
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. La forma estándar es \\( y = A\\cos(Bx + C) \\). En nuestra función:<br>\\[ f(x) = 5\\cos(4\\pi x + 2) \\]<br>identificamos que el factor de frecuencia \\( B = 4\\pi \\).<br>2. Aplicamos la fórmula del periodo para el coseno:<br>\\[ T = \\frac{2\\pi}{|B|} \\]<br>\\[ T = \\frac{2\\pi}{4\\pi} \\]<br>3. Cancelamos \\( \\pi \\) y simplificamos la fracción:<br>\\[ T = \\frac{2}{4} = \\frac{1}{2} = 0.5 \\]<br>El periodo es 1/2."
+        },
+        {
+            topic: "Identidades Trigonométricas Fundamentales",
+            text: "Calcula el valor numérico exacto de la expresión: \\( 5\\sin^2(17^\\circ) + 5\\cos^2(17^\\circ) - 2 \\).",
+            answers: ["3"],
+            hints: [
+                "Pista 1: Saca factor común 5 en los dos primeros términos.",
+                "Pista 2: Te quedará \\( 5(\\sin^2(17^\\circ) + \\cos^2(17^\\circ)) - 2 \\).",
+                "Pista 3: Recuerda la identidad pitagórica fundamental: \\( \\sin^2(\\theta) + \\cos^2(\\theta) = 1 \\), válida para cualquier ángulo."
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. Factorizamos el número 5 de los términos trigonométricos:<br>\\[ 5(\\sin^2(17^\\circ) + \\cos^2(17^\\circ)) - 2 \\]<br>2. Aplicamos la identidad pitagórica \\( \\sin^2(x) + \\cos^2(x) = 1 \\). Notemos que no importa que el ángulo sea 17°, la identidad siempre vale 1:<br>\\[ 5(1) - 2 \\]<br>3. Resolvemos la aritmética simple:<br>\\[ 5 - 2 = 3 \\]"
+        },
+        {
+            topic: "Funciones Trigonométricas Inversas (Trampa de Dominio)",
+            text: "Evalúa analíticamente: \\( \\arcsin\\left(\\sin\\left(\\frac{5\\pi}{6}\\right)\\right)\\). <br><small><em>(Instrucción: Escribe tu respuesta usando 'pi', por ejemplo: pi/2 o 3pi/4, sin espacios)</em></small>",
+            answers: ["pi/6"],
+            hints: [
+                "Pista 1: ¡Cuidado! La respuesta NO es \\( 5\\pi/6 \\). La función arcoseno solo devuelve valores en el intervalo \\( [-\\pi/2, \\pi/2] \\).",
+                "Pista 2: Resuelve de adentro hacia afuera. Primero calcula \\( \\sin(5\\pi/6) \\). Este es un ángulo en el segundo cuadrante donde el seno es positivo.",
+                "Pista 3: \\( \\sin(5\\pi/6) = 1/2 \\). Ahora calcula \\( \\arcsin(1/2) \\), que te dará el ángulo equivalente en el primer cuadrante."
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. Una asunción común es cancelar el arcoseno con el seno, pero la identidad \\( \\arcsin(\\sin(x)) = x \\) <strong>solo</strong> es válida si \\( x \\in [-\\pi/2, \\pi/2] \\).<br>2. Como \\( 5\\pi/6 \\) está fuera de este rango, resolvemos por partes. Primero calculamos el seno:<br>\\[ \\sin\\left(\\frac{5\\pi}{6}\\right) = \\frac{1}{2} \\]<br>3. Ahora evaluamos la función externa con este resultado:<br>\\[ \\arcsin\\left(\\frac{1}{2}\\right) \\]<br>4. Nos preguntamos: ¿Qué ángulo en el intervalo \\( [-\\pi/2, \\pi/2] \\) tiene un seno igual a 1/2? La respuesta es \\( \\pi/6 \\) (o 30°).<br>\\[ \\arcsin\\left(\\frac{1}{2}\\right) = \\frac{\\pi}{6} \\]"
+        },
+
+        // --- FUNCIONES EXPONENCIALES ---
+        {
+            topic: "Ecuaciones Exponenciales (Igualación de bases)",
+            text: "Resuelve para \\( x \\): \\( 4^{2x} = 8^{x-1} \\).",
+            answers: ["-3"],
+            hints: [
+                "Pista 1: Expresa ambas bases (4 y 8) como potencias de 2.",
+                "Pista 2: Sabemos que \\( 4 = 2^2 \\) y \\( 8 = 2^3 \\). La ecuación se transforma en \\( (2^2)^{2x} = (2^3)^{x-1} \\).",
+                "Pista 3: Por potencias de potencias se multiplican los exponentes: \\( 2^{4x} = 2^{3(x-1)} \\). Iguala los exponentes y despeja."
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. Llevamos ambos lados de la ecuación a la misma base fundamental (base 2):<br>\\[ (2^2)^{2x} = (2^3)^{x-1} \\]<br>2. Aplicamos la propiedad de potencia de una potencia (multiplicamos exponentes):<br>\\[ 2^{4x} = 2^{3(x-1)} \\]<br>\\[ 2^{4x} = 2^{3x - 3} \\]<br>3. Al tener bases iguales, igualamos los exponentes algebraicamente:<br>\\[ 4x = 3x - 3 \\]<br>4. Despejamos \\( x \\):<br>\\[ 4x - 3x = -3 \\implies x = -3 \\]"
+        },
+        {
+            topic: "Ecuaciones Exponenciales (Reducibles a cuadráticas)",
+            text: "Dada la ecuación \\( e^{2x} - 5e^x + 6 = 0 \\), la suma de todas sus soluciones reales se puede expresar como \\( \\ln(k) \\). ¿Cuál es el valor del número entero <strong>\\( k \\)</strong>?",
+            answers: ["6"],
+            hints: [
+                "Pista 1: Haz un cambio de variable. Llama \\( u = e^x \\). Observa que \\( e^{2x} = (e^x)^2 = u^2 \\).",
+                "Pista 2: La ecuación se convierte en \\( u^2 - 5u + 6 = 0 \\). Factoriza este polinomio cuadrático.",
+                "Pista 3: Las soluciones son \\( u = 3 \\) y \\( u = 2 \\). Entonces \\( e^x = 3 \\) y \\( e^x = 2 \\). Despeja las 'x' aplicando logaritmo natural y suma ambas soluciones aplicando propiedades de logaritmos."
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. Realizamos el cambio de variable \\( u = e^x \\). La ecuación toma forma cuadrática:<br>\\[ u^2 - 5u + 6 = 0 \\]<br>2. Factorizamos buscando números que sumen -5 y multipliquen 6:<br>\\[ (u - 3)(u - 2) = 0 \\implies u_1 = 3, \\ u_2 = 2 \\]<br>3. Deshacemos el cambio de variable:<br>- \\( e^{x_1} = 3 \\implies x_1 = \\ln(3) \\)<br>- \\( e^{x_2} = 2 \\implies x_2 = \\ln(2) \\)<br>4. Se nos pide la suma de las soluciones reales:<br>\\[ \\ln(3) + \\ln(2) \\]<br>5. Por propiedades de los logaritmos (suma de logaritmos es logaritmo del producto):<br>\\[ \\ln(3 \\cdot 2) = \\ln(6) \\]<br>Por lo tanto, la constante \\( k \\) es 6."
+        },
+        {
+            topic: "Ecuaciones Exponenciales Básicas",
+            text: "Encuentra el valor exacto de \\( x \\) en la ecuación \\( e^{2x - 1} = 1 \\). <br><small><em>(Ingresa decimal o fracción simplificada)</em></small>",
+            answers: ["1/2", "0.5"],
+            hints: [
+                "Pista 1: Cualquier número (distinto de cero) elevado a la potencia cero es igual a 1.",
+                "Pista 2: Sabiendo que \\( e^0 = 1 \\), puedes reescribir la ecuación como \\( e^{2x - 1} = e^0 \\).",
+                "Pista 3: Iguala los exponentes: \\( 2x - 1 = 0 \\) y despeja."
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. Reconocemos que el número 1 puede expresarse como la base \\( e \\) elevada a la cero:<br>\\[ e^{2x - 1} = e^0 \\]<br>2. Como las bases son idénticas, igualamos los exponentes:<br>\\[ 2x - 1 = 0 \\]<br>3. Despejamos \\( x \\):<br>\\[ 2x = 1 \\implies x = \\frac{1}{2} = 0.5 \\]<br><em>(Nota: También podías aplicar \\( \\ln \\) en ambos lados obteniendo \\( 2x-1 = \\ln(1) \\), sabiendo que \\( \\ln(1) = 0 \\)).</em>"
+        },
+        {
+            topic: "Dominio Mixto Exponencial",
+            text: "Determina el <strong>menor valor real</strong> que pertenece al dominio de la función \\( f(x) = e^{\\sqrt{x - 4}} \\).",
+            answers: ["4"],
+            hints: [
+                "Pista 1: La función exponencial base 'e' acepta cualquier número real como exponente. Su dominio propio son todos los reales.",
+                "Pista 2: Sin embargo, el exponente aquí es una función irracional \\( \\sqrt{x-4} \\). Debes garantizar que esta raíz exista en los reales.",
+                "Pista 3: El radicando debe ser mayor o igual a cero: \\( x - 4 \\geq 0 \\). ¿Cuál es el valor más pequeño que cumple esto?"
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. La base exponencial \\( e^u \\) no tiene restricciones por sí misma, el dominio depende exclusivamente de las restricciones que tenga el exponente \\( u(x) \\).<br>2. El exponente es \\( \\sqrt{x - 4} \\). Para que sea un número real, exigimos:<br>\\[ x - 4 \\geq 0 \\]<br>3. Resolvemos la inecuación:<br>\\[ x \\geq 4 \\]<br>4. El dominio en notación de intervalo es \\( [4, \\infty) \\). El valor más pequeño incluido en el dominio es el 4."
+        },
+
+        // --- FUNCIONES LOGARÍTMICAS ---
+        {
+            topic: "Propiedades de los Logaritmos",
+            text: "Calcula el valor numérico exacto de la expresión sin usar calculadora: \\( \\log_2(32) - \\log_3(9) \\).",
+            answers: ["3"],
+            hints: [
+                "Pista 1: Resuelve cada logaritmo por separado. Para \\( \\log_2(32) \\), pregúntate: ¿A qué número elevo el 2 para obtener 32?",
+                "Pista 2: \\( 2^5 = 32 \\), por lo tanto \\( \\log_2(32) = 5 \\).",
+                "Pista 3: Ahora haz lo mismo con el base 3: ¿A qué número elevo 3 para obtener 9? Réstale ese valor al 5."
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. Evaluamos el primer logaritmo. Buscamos el exponente de la base 2:<br>\\[ 2^x = 32 \\implies x = 5 \\implies \\log_2(32) = 5 \\]<br>2. Evaluamos el segundo logaritmo. Buscamos el exponente de la base 3:<br>\\[ 3^y = 9 \\implies y = 2 \\implies \\log_3(9) = 2 \\]<br>3. Realizamos la resta de los resultados obtenidos:<br>\\[ 5 - 2 = 3 \\]"
+        },
+        {
+            topic: "Ecuaciones Logarítmicas (Agrupación)",
+            text: "Encuentra la solución para \\( x \\) en la ecuación: \\( \\log_2(x) + \\log_2(x - 2) = 3 \\).",
+            answers: ["4"],
+            hints: [
+                "Pista 1: Usa la propiedad de suma de logaritmos: \\( \\log_b(A) + \\log_b(B) = \\log_b(A \\cdot B) \\) para condensar en un solo logaritmo.",
+                "Pista 2: Te quedará \\( \\log_2(x(x - 2)) = 3 \\).",
+                "Pista 3: Transforma a forma exponencial: \\( 2^3 = x(x - 2) \\). Obtendrás una ecuación cuadrática. ¡Recuerda descartar soluciones que hagan negativo el argumento de los logaritmos originales!"
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. Condensamos usando propiedades:<br>\\[ \\log_2(x(x - 2)) = 3 \\]<br>2. Pasamos a forma exponencial (la base 2 se eleva a la 3):<br>\\[ x(x - 2) = 2^3 \\]<br>\\[ x^2 - 2x = 8 \\]<br>3. Igualamos a cero y resolvemos la cuadrática:<br>\\[ x^2 - 2x - 8 = 0 \\]<br>\\[ (x - 4)(x + 2) = 0 \\]<br>Posibles soluciones: \\( x = 4 \\), \\( x = -2 \\).<br>4. <strong>Verificación del dominio:</strong> Los argumentos de los logaritmos originales deben ser > 0. Si \\( x = -2 \\), \\( \\log_2(-2) \\) no existe. Descartamos. Si \\( x = 4 \\), ambos argumentos son positivos (4 y 2).<br>La única solución válida es 4."
+        },
+        {
+            topic: "Ecuaciones con Logaritmo Natural",
+            text: "Dada la ecuación \\( \\ln(x + 1) - \\ln(x) = 1 \\). Si la solución se escribe de la forma \\( x = \\frac{1}{e - k} \\), halla el valor de la constante <strong>\\( k \\)</strong>.",
+            answers: ["1"],
+            hints: [
+                "Pista 1: Usa la propiedad de la resta de logaritmos: \\( \\ln(A) - \\ln(B) = \\ln(A/B) \\).",
+                "Pista 2: Obtendrás \\( \\ln\\left(\\frac{x + 1}{x}\\right) = 1 \\).",
+                "Pista 3: Pasa a forma exponencial sabiendo que la base de \\( \\ln \\) es 'e'. \\( \\frac{x + 1}{x} = e^1 \\). Despeja \\( x \\) sacando factor común."
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. Aplicamos la propiedad del cociente para logaritmos:<br>\\[ \\ln\\left(\\frac{x + 1}{x}\\right) = 1 \\]<br>2. Expresamos en forma exponencial (base \\( e \\)):<br>\\[ \\frac{x + 1}{x} = e^1 = e \\]<br>3. Despejamos \\( x \\). Multiplicamos por \\( x \\):<br>\\[ x + 1 = ex \\]<br>4. Agrupamos las \\( x \\) en el lado derecho:<br>\\[ 1 = ex - x \\]<br>\\[ 1 = x(e - 1) \\]<br>5. Despejamos \\( x \\):<br>\\[ x = \\frac{1}{e - 1} \\]<br>Comparando con el formato del enunciado \\( \\frac{1}{e - k} \\), deducimos que \\( k = 1 \\)."
+        },
+        {
+            topic: "Dominio de Funciones Logarítmicas Compuestas",
+            text: "Determina el dominio de la función \\( f(x) = \\log_{10}(\\log_{10}(x)) \\). ¿Cuál es el <strong>menor entero positivo</strong> que pertenece al dominio de \\( f \\)?",
+            answers: ["2"],
+            hints: [
+                "Pista 1: Analiza la función de adentro hacia afuera. El logaritmo interno exige que \\( x > 0 \\).",
+                "Pista 2: El logaritmo externo exige que su argumento entero (que es el logaritmo interno) sea estrictamente mayor a cero: \\( \\log_{10}(x) > 0 \\).",
+                "Pista 3: Pasa esa inecuación a forma exponencial: \\( x > 10^0 \\). Saca tus conclusiones."
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. Condición 1 (por el logaritmo interno):<br>\\[ x > 0 \\]<br>2. Condición 2 (por el logaritmo externo): El argumento completo que evalúa el logaritmo exterior debe ser positivo.<br>\\[ \\log_{10}(x) > 0 \\]<br>3. Resolvemos esta inecuación pasando a su forma exponencial (como la base es 10 > 1, no cambia la desigualdad):<br>\\[ x > 10^0 \\]<br>\\[ x > 1 \\]<br>4. Intersectando ambas condiciones (\\( x > 0 \\) y \\( x > 1 \\)), el dominio final es \\( (1, \\infty) \\).<br>5. Nos piden el menor entero que está en este intervalo. Como el 1 no está incluido, el menor entero es 2."
+        }
+    ];
+
+    let currentQIndex = 0;
+    let hintIndex = 0;
+
+    function initApp() {
+        currentQIndex = 0;
+        displayQuestion();
+    }
+
+    function displayQuestion() {
+        const q = questions[currentQIndex];
+        document.getElementById('topic-badge').innerText = q.topic;
+        document.getElementById('question-text').innerHTML = q.text;
+        
+        // Reset de la interfaz
+        document.getElementById('student-answer').value = '';
+        document.getElementById('feedback-area').style.display = 'none';
+        document.getElementById('hint-area').style.display = 'none';
+        document.getElementById('solution-area').style.display = 'none';
+        hintIndex = 0;
+        
+        // Renderizar las matemáticas de MathJax
+        if (window.MathJax) {
+            MathJax.typesetPromise();
+        }
+    }
+
+    function checkAnswer() {
+        const studentAnsRaw = document.getElementById('student-answer').value;
+        // Limpiamos la respuesta: minúsculas, sin espacios
+        const studentAnsClean = studentAnsRaw.toLowerCase().replace(/\s/g, '');
+        const q = questions[currentQIndex];
+        const feedback = document.getElementById('feedback-area');
+        
+        if(studentAnsClean === '') {
+            feedback.innerHTML = "Por favor, ingresa una respuesta antes de comprobar.";
+            feedback.className = "math-feedback feedback-incorrect";
+            feedback.style.display = 'block';
+            return;
+        }
+
+        let isCorrect = false;
+        for(let i=0; i < q.answers.length; i++) {
+            if(studentAnsClean === q.answers[i]) {
+                isCorrect = true;
+                break;
+            }
+        }
+
+        if (isCorrect) {
+            feedback.innerHTML = "<strong>¡Excelente!</strong> Tu respuesta y razonamiento matemático son correctos.";
+            feedback.className = "math-feedback feedback-correct";
+        } else {
+            feedback.innerHTML = `<strong>Respuesta incorrecta.</strong> Te sugerimos repasar a fondo el tópico: <em>${q.topic}</em>. Recuerda verificar signos y dominios. Usa el botón de pistas si te quedas atascado.`;
+            feedback.className = "math-feedback feedback-incorrect";
+        }
+        feedback.style.display = 'block';
+    }
+
+    function showHint() {
+        const q = questions[currentQIndex];
+        const hintBox = document.getElementById('hint-area');
+        
+        if (hintIndex < q.hints.length) {
+            let currentHintsHTML = "";
+            for(let i=0; i<=hintIndex; i++){
+                currentHintsHTML += "<p>" + q.hints[i] + "</p>";
+            }
+            hintBox.innerHTML = currentHintsHTML;
+            hintBox.style.display = 'block';
+            hintIndex++;
+            
+            if (window.MathJax) {
+                MathJax.typesetPromise();
+            }
+        } else {
+            hintBox.innerHTML += "<p><em>No hay más pistas disponibles. Intenta ver la solución paso a paso para identificar el posible error analítico.</em></p>";
+        }
+    }
+
+    function showSolution() {
+        const solutionBox = document.getElementById('solution-area');
+        const q = questions[currentQIndex];
+        solutionBox.innerHTML = q.solution;
+        solutionBox.style.display = 'block';
+        
+        if (window.MathJax) {
+            MathJax.typesetPromise();
+        }
+    }
+
+    function loadNextQuestion() {
+        currentQIndex++;
+        if (currentQIndex >= questions.length) {
+            currentQIndex = 0; // Reinicia el ciclo
+        }
+        displayQuestion();
+    }
+
+    // Iniciar aplicación al cargar
+    window.addEventListener('load', initApp);
+</script>

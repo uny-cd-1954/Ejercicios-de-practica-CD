@@ -1,0 +1,661 @@
+<!-- Carga de MathJax para renderizar fórmulas matemáticas en Moodle -->
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<style>
+    .math-app-container {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        max-width: 700px;
+        margin: 20px auto;
+        padding: 25px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        background-color: #f4fbf9;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+    }
+    .math-header {
+        text-align: center;
+        color: #117a65;
+        border-bottom: 2px solid #16a085;
+        padding-bottom: 10px;
+        margin-bottom: 20px;
+    }
+    .math-topic-badge {
+        display: inline-block;
+        background-color: #e8f8f5;
+        color: #0e6655;
+        padding: 5px 12px;
+        border-radius: 15px;
+        font-size: 0.85em;
+        font-weight: bold;
+        margin-bottom: 15px;
+    }
+    .math-question {
+        font-size: 1.1em;
+        color: #333;
+        margin-bottom: 20px;
+        line-height: 1.6;
+    }
+    .math-input-group {
+        margin-bottom: 20px;
+    }
+    .math-input-group input {
+        padding: 10px;
+        font-size: 1em;
+        width: 60%;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+    }
+    .math-btn {
+        padding: 10px 15px;
+        font-size: 1em;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        margin-right: 5px;
+        margin-bottom: 5px;
+        color: white;
+        transition: background 0.3s;
+    }
+    .btn-submit { background-color: #1abc9c; }
+    .btn-submit:hover { background-color: #16a085; }
+    .btn-hint { background-color: #f39c12; }
+    .btn-hint:hover { background-color: #f1c40f; }
+    .btn-solution { background-color: #e74c3c; }
+    .btn-solution:hover { background-color: #c0392b; }
+    .btn-next { background-color: #34495e; width: 100%; margin-top: 20px; }
+    
+    .math-feedback {
+        margin-top: 15px;
+        padding: 15px;
+        border-radius: 5px;
+        display: none;
+    }
+    .feedback-correct { background-color: #d5f5e3; color: #145a32; border-left: 5px solid #27ae60; }
+    .feedback-incorrect { background-color: #fdedec; color: #78281f; border-left: 5px solid #e74c3c; }
+    .feedback-hint { background-color: #fef9e7; color: #7d6608; border-left: 5px solid #f1c40f; margin-top: 10px; }
+    .math-solution-box {
+        margin-top: 20px;
+        padding: 15px;
+        background-color: #fff;
+        border: 1px dashed #7f8c8d;
+        display: none;
+        overflow-x: auto;
+    }
+</style>
+
+<div class="math-app-container">
+    <div class="math-header">
+        <h2>Práctica: Aplicaciones de la Derivada</h2>
+    </div>
+    
+    <div id="topic-badge" class="math-topic-badge">Tema</div>
+    <div id="question-text" class="math-question">Cargando pregunta...</div>
+    
+    <div class="math-input-group">
+        <input type="text" id="student-answer" placeholder="Escribe tu respuesta aquí...">
+        <button class="math-btn btn-submit" onclick="checkAnswer()">Comprobar</button>
+    </div>
+    
+    <div>
+        <button class="math-btn btn-hint" onclick="showHint()">Pedir Pista</button>
+        <button class="math-btn btn-solution" onclick="showSolution()">Ver Procedimiento</button>
+    </div>
+    
+    <div id="feedback-area" class="math-feedback"></div>
+    <div id="hint-area" class="math-feedback feedback-hint"></div>
+    <div id="solution-area" class="math-solution-box"></div>
+    
+    <button class="math-btn btn-next" onclick="loadNextQuestion()">Siguiente Ejercicio</button>
+</div>
+
+<script>
+    const questions = [
+        
+        // --- EXTREMOS RELATIVOS (Criterios de Derivadas) ---
+        {
+            topic: "Extremos Relativos (Mínimo en Polinomios)",
+            text: "Dada la función \\( f(x) = x^3 - 6x^2 + 9x + 2 \\). Encuentra la coordenada \\( x \\) donde la función alcanza un <strong>mínimo relativo</strong>.",
+            answers: ["3"],
+            hints: [
+                "Pista 1: Halla la primera derivada y los puntos críticos (donde \\( f'(x) = 0 \\)).",
+                "Pista 2: \\( f'(x) = 3x^2 - 12x + 9 = 3(x^2 - 4x + 3) \\). Factorizando obtienes las raíces \\( x = 1 \\) y \\( x = 3 \\).",
+                "Pista 3: Usa el criterio de la segunda derivada \\( f''(x) = 6x - 12 \\). Evalúa los puntos. Si \\( f''(c) > 0 \\), es un mínimo."
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. Calculamos la primera derivada:<br>\\[ f'(x) = 3x^2 - 12x + 9 \\]<br>2. Igualamos a cero para hallar puntos críticos:<br>\\[ 3(x^2 - 4x + 3) = 0 \\implies (x - 1)(x - 3) = 0 \\]<br>Puntos críticos: \\( x = 1, \\ x = 3 \\).<br>3. Calculamos la segunda derivada:<br>\\[ f''(x) = 6x - 12 \\]<br>4. Evaluamos para clasificar:<br>- En \\( x = 1 \\): \\( f''(1) = 6(1) - 12 = -6 < 0 \\) (Es un máximo relativo).<br>- En \\( x = 3 \\): \\( f''(3) = 6(3) - 12 = 6 > 0 \\) (Es un mínimo relativo).<br>Respuesta: El mínimo está en \\( x = 3 \\)."
+        },
+        {
+            topic: "Extremos Relativos (Máximo en Polinomios)",
+            text: "Para la misma función \\( f(x) = x^3 - 6x^2 + 9x + 2 \\), determina el <strong>valor numérico exacto de la función en su máximo relativo</strong>, es decir, su coordenada \\( y \\).",
+            answers: ["6"],
+            hints: [
+                "Pista 1: Del ejercicio anterior sabemos que el máximo relativo ocurre en \\( x = 1 \\).",
+                "Pista 2: Para hallar el valor del máximo, debes evaluar \\( x = 1 \\) en la función original, no en la derivada.",
+                "Pista 3: Calcula \\( f(1) = (1)^3 - 6(1)^2 + 9(1) + 2 \\)."
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. Sabemos que el máximo relativo se alcanza en \\( x = 1 \\) porque allí \\( f'(1) = 0 \\) y \\( f''(1) = -6 < 0 \\).<br>2. Evaluamos la función original \\( f(x) \\) en \\( x = 1 \\):<br>\\[ f(1) = 1^3 - 6(1)^2 + 9(1) + 2 \\]<br>\\[ f(1) = 1 - 6 + 9 + 2 \\]<br>\\[ f(1) = 6 \\]<br>El valor del máximo relativo es 6."
+        },
+        {
+            topic: "Extremos Relativos (Funciones Racionales)",
+            text: "Determina la coordenada \\( x \\) del <strong>mínimo relativo (o local)</strong> para la función \\( f(x) = x + \\frac{4}{x} \\) en el dominio \\( (0, \\infty) \\).",
+            answers: ["2"],
+            hints: [
+                "Pista 1: Reescribe la función como \\( x + 4x^{-1} \\) y calcula su primera derivada.",
+                "Pista 2: \\( f'(x) = 1 - \\frac{4}{x^2} \\). Igualando a cero obtienes \\( \\frac{x^2 - 4}{x^2} = 0 \\).",
+                "Pista 3: Las raíces son 2 y -2, pero el dominio es \\( x > 0 \\). Por tanto, el punto crítico es \\( x = 2 \\). Verifica con la segunda derivada."
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. Derivamos la función:<br>\\[ f'(x) = 1 - 4x^{-2} = 1 - \\frac{4}{x^2} \\]<br>2. Igualamos a cero:<br>\\[ 1 = \\frac{4}{x^2} \\implies x^2 = 4 \\implies x = 2, \\ x = -2 \\]<br>3. Como el dominio exigido es \\( (0, \\infty) \\), descartamos -2. El punto crítico es \\( x = 2 \\).<br>4. Verificamos con la segunda derivada:<br>\\[ f''(x) = 8x^{-3} = \\frac{8}{x^3} \\]<br>5. En \\( x = 2 \\), \\( f''(2) = \\frac{8}{8} = 1 > 0 \\) (Mínimo relativo).<br>Respuesta: \\( x = 2 \\)."
+        },
+        {
+            topic: "Extremos Relativos (Funciones Exponenciales)",
+            text: "La función \\( f(x) = x e^{-x} \\) representa un modelo de dosis de medicamento. Determina el valor exacto de \\( x \\) donde la concentración alcanza su <strong>máximo relativo</strong>.",
+            answers: ["1"],
+            hints: [
+                "Pista 1: Aplica la regla del producto para derivar: \\( u = x \\) y \\( v = e^{-x} \\).",
+                "Pista 2: La derivada es \\( f'(x) = 1 \\cdot e^{-x} + x \\cdot (-e^{-x}) \\), lo que factoriza a \\( e^{-x}(1 - x) \\).",
+                "Pista 3: Iguala a cero. Como la exponencial \\( e^{-x} \\) nunca es cero, la única solución sale del paréntesis."
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. Calculamos la primera derivada usando la regla del producto:<br>\\[ f'(x) = (1)e^{-x} + x(-e^{-x}) \\]<br>\\[ f'(x) = e^{-x} - x e^{-x} = e^{-x}(1 - x) \\]<br>2. Buscamos puntos críticos igualando a cero:<br>\\[ e^{-x}(1 - x) = 0 \\]<br>3. Ya que \\( e^{-x} > 0 \\) para todo \\( x \\), entonces:<br>\\[ 1 - x = 0 \\implies x = 1 \\]<br>4. Comprobamos con la primera derivada que el signo pasa de positivo (crece) a negativo (decrece) alrededor de 1, confirmando el máximo relativo en \\( x = 1 \\)."
+        },
+        {
+            topic: "Extremos Relativos (Funciones Logarítmicas)",
+            text: "Dada la función \\( f(x) = x^2 - 8\\ln(x) \\) definida para \\( x > 0 \\). ¿En qué coordenada \\( x \\) se encuentra su extremo relativo?",
+            answers: ["2"],
+            hints: [
+                "Pista 1: La derivada de \\( \\ln(x) \\) es \\( 1/x \\). Por lo tanto, \\( f'(x) = 2x - 8/x \\).",
+                "Pista 2: Iguala a cero y multiplica toda la ecuación por \\( x \\) para eliminar el denominador.",
+                "Pista 3: Obtendrás \\( 2x^2 - 8 = 0 \\). Despeja \\( x \\) y toma solo el valor positivo por el dominio."
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. Calculamos la derivada de la función:<br>\\[ f'(x) = 2x - \\frac{8}{x} \\]<br>2. Igualamos a cero para encontrar los puntos críticos:<br>\\[ 2x - \\frac{8}{x} = 0 \\]<br>\\[ 2x = \\frac{8}{x} \\]<br>3. Multiplicamos por \\( x \\):<br>\\[ 2x^2 = 8 \\implies x^2 = 4 \\implies x = 2, \\ x = -2 \\]<br>4. El dominio de \\( \\ln(x) \\) restringe los valores a \\( x > 0 \\). Descartamos el -2.<br>El extremo relativo se encuentra en \\( x = 2 \\)."
+        },
+        {
+            topic: "Extremos Relativos (Funciones Trigonométricas)",
+            text: "Considera la función \\( f(x) = \\sin(x) + \\cos(x) \\) en el intervalo abierto \\( (0, 2\\pi) \\). Determina la coordenada \\( x \\) donde la función alcanza su <strong>máximo relativo</strong>. <br><small><em>(Ingresa la respuesta usando 'pi', ejemplo: pi/2 o 3pi/4 sin espacios)</em></small>",
+            answers: ["pi/4"],
+            hints: [
+                "Pista 1: Deriva e iguala a cero: \\( \\cos(x) - \\sin(x) = 0 \\).",
+                "Pista 2: Divide entre \\( \\cos(x) \\) para obtener \\( 1 - \\tan(x) = 0 \\), o sea, \\( \\tan(x) = 1 \\).",
+                "Pista 3: Las soluciones en \\( (0, 2\\pi) \\) son \\( \\pi/4 \\) y \\( 5\\pi/4 \\). Usa la segunda derivada \\( -\\sin(x) - \\cos(x) \\) para ver cuál da negativo (máximo)."
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. Primera derivada:<br>\\[ f'(x) = \\cos(x) - \\sin(x) \\]<br>2. Puntos críticos:<br>\\[ \\cos(x) - \\sin(x) = 0 \\implies \\sin(x) = \\cos(x) \\implies \\tan(x) = 1 \\]<br>Las soluciones son \\( x = \\pi/4 \\) y \\( x = 5\\pi/4 \\).<br>3. Segunda derivada:<br>\\[ f''(x) = -\\sin(x) - \\cos(x) \\]<br>4. Evaluamos los puntos críticos:<br>- En \\( \\pi/4 \\): \\( f''(\\pi/4) = -\\frac{\\sqrt{2}}{2} - \\frac{\\sqrt{2}}{2} = -\\sqrt{2} < 0 \\) (Máximo relativo).<br>- En \\( 5\\pi/4 \\): \\( f''(5\\pi/4) = -(-\\frac{\\sqrt{2}}{2}) - (-\\frac{\\sqrt{2}}{2}) = \\sqrt{2} > 0 \\) (Mínimo relativo).<br>Respuesta: \\( \\pi/4 \\)."
+        },
+        {
+            topic: "Extremos en Puntos Singulares (Cúspides)",
+            text: "Dada la función \\( f(x) = (x - 2)^{2/3} \\). La función alcanza un mínimo relativo en un punto crítico donde la derivada <strong>no está definida</strong>. ¿Cuál es el valor de \\( x \\) de ese punto crítico?",
+            answers: ["2"],
+            hints: [
+                "Pista 1: Deriva aplicando la regla de la cadena: \\( f'(x) = \\frac{2}{3}(x - 2)^{-1/3} \\).",
+                "Pista 2: Reescribe con exponente positivo: \\( f'(x) = \\frac{2}{3\\sqrt[3]{x - 2}} \\).",
+                "Pista 3: Observa el denominador. El punto crítico ocurre donde el denominador se hace cero, lo que indefinida a la derivada."
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. Derivamos la función:<br>\\[ f'(x) = \\frac{2}{3}(x - 2)^{-1/3} = \\frac{2}{3\\sqrt[3]{x - 2}} \\]<br>2. Un punto crítico ocurre si \\( f'(x) = 0 \\) o si \\( f'(x) \\) no está definida.<br>3. La fracción nunca es cero porque el numerador es constante (2).<br>4. La derivada no existe cuando el denominador es cero:<br>\\[ 3\\sqrt[3]{x - 2} = 0 \\implies x - 2 = 0 \\implies x = 2 \\]<br>5. En \\( x = 2 \\), hay un punto crítico singular (una cúspide en la gráfica) y constituye un mínimo relativo ya que \\( f(x) \\geq 0 \\) siempre y \\( f(2) = 0 \\)."
+        },
+        {
+            topic: "Optimización Mixta",
+            text: "Sea la función \\( f(x) = x^4 e^{-x} \\). El mayor punto crítico (aquel con mayor valor de \\( x \\)) corresponde a un máximo relativo. ¿Cuál es la coordenada \\( x \\) de este máximo?",
+            answers: ["4"],
+            hints: [
+                "Pista 1: Deriva usando la regla del producto: \\( 4x^3 e^{-x} + x^4(-e^{-x}) \\).",
+                "Pista 2: Factoriza los términos comunes: \\( x^3 e^{-x}(4 - x) = 0 \\).",
+                "Pista 3: Las raíces son 0 y 4. Se pide el mayor punto crítico."
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. Aplicamos la regla del producto para derivar:<br>\\[ f'(x) = (4x^3)e^{-x} + x^4(-e^{-x}) \\]<br>2. Extraemos el factor común \\( x^3 e^{-x} \\):<br>\\[ f'(x) = x^3 e^{-x}(4 - x) \\]<br>3. Igualamos a cero. Puesto que \\( e^{-x} > 0 \\):<br>\\[ x^3 = 0 \\implies x = 0 \\]<br>\\[ 4 - x = 0 \\implies x = 4 \\]<br>4. Tenemos dos puntos críticos. El problema pregunta por el mayor, que además, por prueba de signos de la primera derivada (pasa de + a -), efectivamente es un máximo relativo.<br>Respuesta: 4."
+        },
+
+        // --- TEOREMA DE ROLLE ---
+        {
+            topic: "Teorema de Rolle (Polinómica)",
+            text: "Verifica que \\( f(x) = x^2 - 6x + 8 \\) cumple con las hipótesis del Teorema de Rolle en el intervalo \\( [2, 4] \\). Determina el valor exacto de \\( c \\) en el intervalo \\( (2, 4) \\) tal que \\( f'(c) = 0 \\).",
+            answers: ["3"],
+            hints: [
+                "Pista 1: Verifica que \\( f(2) = f(4) \\). Evaluando notarás que ambos dan cero.",
+                "Pista 2: Deriva la función: \\( f'(x) = 2x - 6 \\).",
+                "Pista 3: Iguala la derivada a cero y despeja el valor de \\( x \\), que corresponderá a tu valor \\( c \\)."
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. Hipótesis:<br> - \\( f(x) \\) es polinómica, luego es continua en \\( [2,4] \\) y derivable en \\( (2,4) \\).<br> - Evaluamos los extremos: \\( f(2) = 4 - 12 + 8 = 0 \\) y \\( f(4) = 16 - 24 + 8 = 0 \\). Como \\( f(2) = f(4) \\), aplica Rolle.<br>2. Según el teorema, existe al menos un \\( c \\) tal que \\( f'(c) = 0 \\).<br>3. Derivamos: \\( f'(x) = 2x - 6 \\).<br>4. Evaluamos e igualamos a 0:<br>\\[ 2c - 6 = 0 \\implies 2c = 6 \\implies c = 3 \\]<br>El valor 3 pertenece al intervalo \\( (2, 4) \\)."
+        },
+        {
+            topic: "Teorema de Rolle (Función Cúbica)",
+            text: "La función \\( f(x) = x^3 - 3x \\) cumple Rolle en \\( [-\\sqrt{3}, \\sqrt{3}] \\). Esto produce dos valores \\( c_1 \\) y \\( c_2 \\) en el intervalo abierto donde \\( f'(c) = 0 \\). ¿Cuál es el <strong>producto</strong> exacto de esos dos valores (\\( c_1 \\cdot c_2 \\))?",
+            answers: ["-1"],
+            hints: [
+                "Pista 1: Encuentra la derivada: \\( f'(x) = 3x^2 - 3 \\).",
+                "Pista 2: Iguala a cero: \\( 3x^2 - 3 = 0 \\implies x^2 = 1 \\).",
+                "Pista 3: Las dos soluciones para \\( c \\) son 1 y -1. Multiplica ambos números."
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. Verificamos que aplica Rolle (\\( f(\\pm\\sqrt{3}) = 0 \\), función polinómica).<br>2. Hallamos la derivada:<br>\\[ f'(x) = 3x^2 - 3 \\]<br>3. Igualamos a cero para encontrar los valores \\( c \\):<br>\\[ 3c^2 - 3 = 0 \\implies 3(c^2 - 1) = 0 \\implies c^2 = 1 \\]<br>\\[ c_1 = 1, \\quad c_2 = -1 \\]<br>Ambos valores están en el intervalo \\( (-1.73, 1.73) \\).<br>4. Calculamos el producto de ambos:<br>\\[ (1)(-1) = -1 \\]"
+        },
+        {
+            topic: "Teorema de Rolle (Trigonométrica)",
+            text: "Aplicando el Teorema de Rolle a la función \\( f(x) = \\cos(2x) \\) en el intervalo \\( [\\pi/4, 3\\pi/4] \\), existe un valor \\( c \\) que anula la derivada. ¿Cuál es el valor exacto de \\( c \\)? <br><small><em>(Escribe tu respuesta usando 'pi', ejemplo: pi/2 sin espacios)</em></small>",
+            answers: ["pi/2"],
+            hints: [
+                "Pista 1: Verifica extremos: \\( \\cos(2(\\pi/4)) = \\cos(\\pi/2) = 0 \\). Del mismo modo \\( f(3\\pi/4) = 0 \\).",
+                "Pista 2: Deriva usando regla de la cadena: \\( f'(x) = -2\\sin(2x) \\).",
+                "Pista 3: Iguala a cero: \\( -2\\sin(2c) = 0 \\implies \\sin(2c) = 0 \\). Busca qué ángulo entre \\( \\pi/2 \\) y \\( 3\\pi/2 \\) (que es el dominio de 2x) hace que el seno sea cero."
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. Al ser trigonométrica, es continua y derivable en todo \\( \\mathbb{R} \\). Como \\( f(\\pi/4) = f(3\\pi/4) = 0 \\), el teorema aplica.<br>2. Derivamos la función:<br>\\[ f'(x) = -2\\sin(2x) \\]<br>3. Igualamos la derivada a cero:<br>\\[ -2\\sin(2c) = 0 \\implies \\sin(2c) = 0 \\]<br>4. El seno se anula en los múltiplos enteros de \\( \\pi \\) (0, \\( \\pi \\), 2\\( \\pi \\), etc.). <br>Para que \\( c \\) esté en el intervalo dado \\( (\\pi/4, 3\\pi/4) \\), debemos tener \\( 2c \\) en \\( (\\pi/2, 3\\pi/2) \\).<br>El único múltiplo de \\( \\pi \\) en ese rango es \\( \\pi \\):<br>\\[ 2c = \\pi \\implies c = \\frac{\\pi}{2} \\]"
+        },
+        {
+            topic: "Fallos en el Teorema de Rolle (Hipótesis)",
+            text: "Considera la función \\( f(x) = |x| \\) en el intervalo \\( [-1, 1] \\). Se cumple que \\( f(-1) = 1 \\) y \\( f(1) = 1 \\), pero el Teorema de Rolle <strong>no aplica</strong> y no hay ningún \\( c \\) donde la derivada sea cero. ¿En qué valor de \\( x \\) dentro del intervalo falla una hipótesis crítica (derivabilidad)?",
+            answers: ["0"],
+            hints: [
+                "Pista 1: El teorema exige que la función sea continua en \\( [-1, 1] \\) y derivable en el abierto \\( (-1, 1) \\).",
+                "Pista 2: La gráfica del valor absoluto es una 'V'. ¿Qué pasa en el pico de la 'V' con respecto a las pendientes laterales?",
+                "Pista 3: En el vértice del valor absoluto, las derivadas laterales no coinciden (son -1 y 1). Allí falla la derivabilidad."
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. Verificamos las hipótesis del Teorema de Rolle:<br>a) \\( f(-1) = f(1) = 1 \\). (Cumple).<br>b) \\( f(x) \\) es continua en \\( [-1, 1] \\). (Cumple).<br>c) \\( f(x) \\) debe ser derivable en \\( (-1, 1) \\). (Falla).<br>2. La función \\( |x| \\) tiene un \"pico\" o esquina en el origen.<br>3. Demostramos la no derivabilidad en \\( x = 0 \\):<br>Límite por izquierda de la derivada: \\( -1 \\).<br>Límite por derecha de la derivada: \\( +1 \\).<br>Al no existir la derivada en \\( x = 0 \\), el teorema de Rolle no garantiza la existencia de un punto con pendiente cero."
+        },
+        {
+            topic: "Teorema de Rolle (Con Parámetros)",
+            text: "Dada la función polinómica \\( f(x) = x^2 + kx + 5 \\) en el intervalo \\( [-2, 6] \\). Halla el valor de la constante <strong>\\( k \\)</strong> para que la función satisfaga todas las hipótesis del Teorema de Rolle.",
+            answers: ["-4"],
+            hints: [
+                "Pista 1: Al ser polinomio, ya es continua y derivable. Solo falta forzar que \\( f(-2) = f(6) \\).",
+                "Pista 2: Evalúa \\( f(-2) = 4 - 2k + 5 \\). Evalúa \\( f(6) = 36 + 6k + 5 \\).",
+                "Pista 3: Iguala ambas expresiones: \\( 9 - 2k = 41 + 6k \\). Despeja \\( k \\)."
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. La condición fundamental faltante es \\( f(a) = f(b) \\).<br>2. Planteamos \\( f(-2) = f(6) \\):<br>\\[ (-2)^2 + k(-2) + 5 = (6)^2 + k(6) + 5 \\]<br>\\[ 4 - 2k + 5 = 36 + 6k + 5 \\]<br>\\[ 9 - 2k = 41 + 6k \\]<br>3. Agrupamos los términos con \\( k \\):<br>\\[ 9 - 41 = 6k + 2k \\]<br>\\[ -32 = 8k \\]<br>\\[ k = -\\frac{32}{8} = -4 \\]"
+        },
+        {
+            topic: "Teorema de Rolle (Función Exponencial/Polinómica)",
+            text: "La función \\( f(x) = e^x (x^2 - 4x + 3) \\) en el intervalo \\( [1, 3] \\) cumple las hipótesis de Rolle. El valor de \\( c \\) garantizado por el teorema tiene la forma \\( 1 + \\sqrt{k} \\). Calcula el valor exacto de la constante <strong>\\( k \\)</strong>.",
+            answers: ["2"],
+            hints: [
+                "Pista 1: Deriva con regla del producto. \\( f'(x) = e^x(x^2 - 4x + 3) + e^x(2x - 4) \\).",
+                "Pista 2: Saca factor común \\( e^x \\) y simplifica el polinomio interno a \\( x^2 - 2x - 1 = 0 \\).",
+                "Pista 3: Resuelve con la resolvente (fórmula cuadrática). Obtendrás \\( 1 \\pm \\sqrt{2} \\). Selecciona la raíz que caiga dentro de \\( (1, 3) \\)."
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. Verificamos: \\( f(1) = 0 \\) y \\( f(3) = 0 \\). (Cumple Rolle).<br>2. Derivamos usando la regla del producto:<br>\\[ f'(x) = e^x (x^2 - 4x + 3) + e^x (2x - 4) \\]<br>\\[ f'(x) = e^x (x^2 - 4x + 3 + 2x - 4) = e^x (x^2 - 2x - 1) \\]<br>3. Igualamos a cero para hallar \\( c \\). Sabiendo que \\( e^x > 0 \\):<br>\\[ c^2 - 2c - 1 = 0 \\]<br>4. Aplicamos fórmula cuadrática:<br>\\[ c = \\frac{2 \\pm \\sqrt{4 - 4(1)(-1)}}{2} = \\frac{2 \\pm \\sqrt{8}}{2} = \\frac{2 \\pm 2\\sqrt{2}}{2} = 1 \\pm \\sqrt{2} \\]<br>5. El valor en \\( (1, 3) \\) es \\( 1 + \\sqrt{2} \\) (aprox 2.41). Comparando con \\( 1 + \\sqrt{k} \\), concluimos que \\( k = 2 \\)."
+        },
+
+        // --- TEOREMA DEL VALOR MEDIO (LAGRANGE) ---
+        {
+            topic: "Teorema del Valor Medio (Cuadrática)",
+            text: "Aplica el Teorema del Valor Medio a la función \\( f(x) = x^2 \\) en el intervalo \\( [1, 3] \\). Encuentra el valor exacto de \\( c \\).",
+            answers: ["2"],
+            hints: [
+                "Pista 1: La fórmula es \\( f'(c) = \\frac{f(b) - f(a)}{b - a} \\).",
+                "Pista 2: Calcula la tasa de cambio promedio: \\( \\frac{f(3) - f(1)}{3 - 1} = \\frac{9 - 1}{2} = 4 \\).",
+                "Pista 3: Deriva la función: \\( f'(x) = 2x \\). Iguala a la tasa promedio: \\( 2c = 4 \\)."
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. Calculamos el lado derecho del teorema (pendiente de la recta secante):<br>\\[ m = \\frac{f(3) - f(1)}{3 - 1} = \\frac{3^2 - 1^2}{2} = \\frac{8}{2} = 4 \\]<br>2. Calculamos la derivada de la función:<br>\\[ f'(x) = 2x \\]<br>3. Igualamos la derivada en \\( c \\) a la pendiente secante:<br>\\[ f'(c) = 4 \\implies 2c = 4 \\implies c = 2 \\]<br>El valor \\( c = 2 \\) pertenece al intervalo abierto \\( (1, 3) \\)."
+        },
+        {
+            topic: "Teorema del Valor Medio (Cúbica)",
+            text: "Para \\( f(x) = x^3 + x - 1 \\) en \\( [0, 2] \\), el Teorema del Valor Medio garantiza un valor \\( c = \\frac{2}{\\sqrt{k}} \\). ¿Cuál es el valor del número entero <strong>\\( k \\)</strong>?",
+            answers: ["3"],
+            hints: [
+                "Pista 1: Tasa promedio: \\( \\frac{f(2) - f(0)}{2 - 0} = \\frac{9 - (-1)}{2} = 5 \\).",
+                "Pista 2: La derivada es \\( f'(x) = 3x^2 + 1 \\).",
+                "Pista 3: Plantea la ecuación \\( 3c^2 + 1 = 5 \\) y despeja \\( c \\), seleccionando la raíz que pertenezca a \\( (0, 2) \\)."
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. Calculamos la pendiente de la secante:<br>\\[ f(2) = 8 + 2 - 1 = 9 \\]<br>\\[ f(0) = 0 + 0 - 1 = -1 \\]<br>\\[ m = \\frac{9 - (-1)}{2 - 0} = \\frac{10}{2} = 5 \\]<br>2. Derivamos la función e igualamos a 5:<br>\\[ f'(x) = 3x^2 + 1 \\]<br>\\[ 3c^2 + 1 = 5 \\]<br>\\[ 3c^2 = 4 \\implies c^2 = \\frac{4}{3} \\]<br>3. Extraemos la raíz cuadrada. Tomamos la positiva por estar en \\( [0, 2] \\):<br>\\[ c = \\frac{2}{\\sqrt{3}} \\]<br>Comparando con el formato del enunciado, \\( k = 3 \\)."
+        },
+        {
+            topic: "Teorema del Valor Medio (Funciones Irracionales)",
+            text: "Encuentra el valor exacto de \\( c \\) que satisface el Teorema del Valor Medio para \\( f(x) = \\sqrt{x} \\) en el intervalo cerrado \\( [0, 4] \\).",
+            answers: ["1"],
+            hints: [
+                "Pista 1: Calcula el cambio promedio: \\( \\frac{\\sqrt{4} - \\sqrt{0}}{4 - 0} \\).",
+                "Pista 2: Eso te da \\( \\frac{2}{4} = \\frac{1}{2} \\).",
+                "Pista 3: La derivada es \\( f'(x) = \\frac{1}{2\\sqrt{x}} \\). Iguala ambas cosas y despeja."
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. Pendiente de la secante:<br>\\[ m = \\frac{f(4) - f(0)}{4 - 0} = \\frac{2 - 0}{4} = \\frac{1}{2} \\]<br>2. Derivada de la función (pendiente tangente):<br>\\[ f'(x) = \\frac{1}{2\\sqrt{x}} \\]<br>3. Igualamos ambas pendientes:<br>\\[ \\frac{1}{2\\sqrt{c}} = \\frac{1}{2} \\]<br>4. Multiplicamos cruzado o igualamos denominadores:<br>\\[ 2\\sqrt{c} = 2 \\implies \\sqrt{c} = 1 \\implies c = 1 \\]<br>El valor pertenece a \\( (0, 4) \\)."
+        },
+        {
+            topic: "Teorema del Valor Medio (Funciones Racionales)",
+            text: "Dada la función \\( f(x) = \\frac{1}{x} \\) en el intervalo \\( [1, 4] \\). Determina el valor exacto de \\( c \\) que garantiza el Teorema del Valor Medio.",
+            answers: ["2"],
+            hints: [
+                "Pista 1: Pendiente promedio: \\( \\frac{f(4) - f(1)}{4 - 1} = \\frac{1/4 - 1}{3} = -1/4 \\).",
+                "Pista 2: Derivada: \\( f'(x) = -\\frac{1}{x^2} \\).",
+                "Pista 3: Iguala \\( -\\frac{1}{c^2} = -\\frac{1}{4} \\). Despeja y toma el valor positivo que está en el intervalo."
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. Tasa de cambio media:<br>\\[ m = \\frac{\\frac{1}{4} - 1}{4 - 1} = \\frac{-\\frac{3}{4}}{3} = -\\frac{1}{4} \\]<br>2. Tasa de cambio instantánea (derivada):<br>\\[ f'(x) = -x^{-2} = -\\frac{1}{x^2} \\]<br>3. Aplicamos el Teorema igualando ambas expresiones:<br>\\[ -\\frac{1}{c^2} = -\\frac{1}{4} \\]<br>\\[ c^2 = 4 \\implies c = \\pm 2 \\]<br>4. Exigimos que \\( c \\in (1, 4) \\), por lo que descartamos el -2.<br>Respuesta: \\( c = 2 \\)."
+        },
+        {
+            topic: "Teorema del Valor Medio (Funciones Logarítmicas)",
+            text: "Si aplicamos el TVM a \\( f(x) = \\ln(x) \\) en el intervalo \\( [1, e] \\), el valor de \\( c \\) tiene la forma analítica \\( c = e - k \\). Determina el valor entero de la constante <strong>\\( k \\)</strong>.",
+            answers: ["1"],
+            hints: [
+                "Pista 1: Tasa promedio: \\( \\frac{\\ln(e) - \\ln(1)}{e - 1} = \\frac{1 - 0}{e - 1} = \\frac{1}{e - 1} \\).",
+                "Pista 2: Derivada: \\( f'(x) = \\frac{1}{x} \\).",
+                "Pista 3: Iguala \\( \\frac{1}{c} = \\frac{1}{e - 1} \\). Al invertir ambas fracciones descubres cuánto vale \\( c \\)."
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. Calculamos la pendiente secante en el intervalo dado:<br>\\[ m = \\frac{f(e) - f(1)}{e - 1} = \\frac{\\ln(e) - \\ln(1)}{e - 1} = \\frac{1 - 0}{e - 1} = \\frac{1}{e - 1} \\]<br>2. Derivamos la función logarítmica:<br>\\[ f'(x) = \\frac{1}{x} \\]<br>3. Igualamos la derivada a la pendiente secante:<br>\\[ f'(c) = \\frac{1}{c} = \\frac{1}{e - 1} \\]<br>4. Al invertir ambos lados obtenemos directamente:<br>\\[ c = e - 1 \\]<br>Comparando con el formato del enunciado, la constante \\( k \\) vale 1."
+        },
+        {
+            topic: "Interpretación Física del Teorema del Valor Medio",
+            text: "La posición de un objeto en caída está dada por \\( s(t) = -t^2 + 4t \\) en el intervalo de tiempo de \\( 0 \\) a \\( 2 \\) segundos. ¿En qué instante \\( t \\) exacto su <strong>velocidad instantánea</strong> es igual a su <strong>velocidad promedio</strong> en ese viaje?",
+            answers: ["1"],
+            hints: [
+                "Pista 1: Calcula la velocidad promedio: \\( \\frac{s(2) - s(0)}{2 - 0} \\). Esto es \\( \\frac{4 - 0}{2} = 2 \\).",
+                "Pista 2: La velocidad instantánea es la derivada: \\( s'(t) = -2t + 4 \\).",
+                "Pista 3: Por el Teorema del Valor Medio, iguala \\( -2t + 4 = 2 \\) y despeja el tiempo \\( t \\)."
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. Calculamos la velocidad promedio (pendiente secante) entre \\( t = 0 \\) y \\( t = 2 \\):<br>\\[ s(2) = -(2)^2 + 4(2) = -4 + 8 = 4 \\]<br>\\[ s(0) = 0 \\]<br>\\[ V_{prom} = \\frac{4 - 0}{2 - 0} = 2 \\text{ unidades/s} \\]<br>2. Calculamos la velocidad instantánea (derivada):<br>\\[ V_{inst} = s'(t) = -2t + 4 \\]<br>3. Por el Teorema del Valor Medio de Lagrange, debe existir un \\( t \\) donde ambas coincidan:<br>\\[ -2t + 4 = 2 \\]<br>\\[ -2t = -2 \\implies t = 1 \\]<br>Ocurre exactamente a 1 segundo del recorrido."
+        },
+
+        // --- EXTREMOS ABSOLUTOS ---
+        {
+            topic: "Extremos Absolutos (Polinomio Cuadrático)",
+            text: "Encuentra el <strong>valor máximo absoluto</strong> (coordenada y) de la función \\( f(x) = -x^2 + 4x + 1 \\) en el intervalo cerrado \\( [0, 3] \\).",
+            answers: ["5"],
+            hints: [
+                "Pista 1: El Teorema del Valor Extremo dice que el máximo absoluto ocurre en un punto crítico dentro del intervalo o en los extremos del intervalo.",
+                "Pista 2: Deriva para hallar puntos críticos: \\( f'(x) = -2x + 4 \\). El punto crítico es \\( x = 2 \\).",
+                "Pista 3: Evalúa la función original en los extremos del intervalo (\\( x=0, x=3 \\)) y en el punto crítico (\\( x=2 \\)). El resultado más grande es el máximo absoluto."
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. Calculamos la derivada para hallar puntos críticos:<br>\\[ f'(x) = -2x + 4 \\]<br>\\[ -2x + 4 = 0 \\implies x = 2 \\]<br>Este punto pertenece al intervalo \\( [0, 3] \\).<br>2. Evaluamos la función original \\( f(x) \\) en los extremos y en el punto crítico:<br>- En \\( x = 0 \\): \\( f(0) = -(0)^2 + 4(0) + 1 = 1 \\)<br>- En \\( x = 3 \\): \\( f(3) = -(3)^2 + 4(3) + 1 = -9 + 12 + 1 = 4 \\)<br>- En \\( x = 2 \\): \\( f(2) = -(2)^2 + 4(2) + 1 = -4 + 8 + 1 = 5 \\)<br>3. Comparamos los valores: 1, 4 y 5. El mayor es 5.<br>Respuesta: 5."
+        },
+        {
+            topic: "Extremos Absolutos (Polinomio Cúbico)",
+            text: "Determina el <strong>valor mínimo absoluto</strong> de la función \\( f(x) = x^3 - 3x^2 + 1 \\) en el intervalo cerrado \\( [-1, 4] \\).",
+            answers: ["-3"],
+            hints: [
+                "Pista 1: Deriva: \\( f'(x) = 3x^2 - 6x \\). Iguala a cero para encontrar los puntos críticos.",
+                "Pista 2: Factorizando obtienes \\( 3x(x - 2) = 0 \\). Los puntos críticos son \\( x=0 \\) y \\( x=2 \\). Ambos están en \\( [-1, 4] \\).",
+                "Pista 3: Evalúa \\( f(-1), f(0), f(2) \\) y \\( f(4) \\). El número más pequeño es tu respuesta."
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. Derivamos y hallamos puntos críticos:<br>\\[ f'(x) = 3x^2 - 6x = 3x(x - 2) = 0 \\implies x = 0, \\ x = 2 \\]<br>Ambos están dentro de \\( [-1, 4] \\).<br>2. Evaluamos \\( f(x) \\) en los extremos y puntos críticos:<br>- Extremo \\( x = -1 \\): \\( f(-1) = (-1)^3 - 3(-1)^2 + 1 = -1 - 3 + 1 = -3 \\)<br>- Punto crítico \\( x = 0 \\): \\( f(0) = 0 - 0 + 1 = 1 \\)<br>- Punto crítico \\( x = 2 \\): \\( f(2) = 2^3 - 3(2)^2 + 1 = 8 - 12 + 1 = -3 \\)<br>- Extremo \\( x = 4 \\): \\( f(4) = 4^3 - 3(4)^2 + 1 = 64 - 48 + 1 = 17 \\)<br>3. Comparamos los resultados: -3, 1, -3 y 17. El valor más pequeño es -3.<br>Respuesta: -3."
+        },
+        {
+            topic: "Extremos Absolutos (Funciones Racionales)",
+            text: "Calcula el <strong>valor máximo absoluto</strong> de \\( f(x) = \\frac{x}{x^2 + 1} \\) en el intervalo cerrado \\( [0, 2] \\). <br><small><em>(Ingresa fracción simplificada o decimal)</em></small>",
+            answers: ["1/2", "0.5"],
+            hints: [
+                "Pista 1: Deriva con la regla del cociente: \\( f'(x) = \\frac{1(x^2+1) - x(2x)}{(x^2+1)^2} = \\frac{1-x^2}{(x^2+1)^2} \\).",
+                "Pista 2: Iguala el numerador a cero para los puntos críticos: \\( 1 - x^2 = 0 \\implies x = 1 \\) o \\( x = -1 \\). Solo el 1 está en el intervalo.",
+                "Pista 3: Evalúa \\( f(0), f(1) \\) y \\( f(2) \\). El resultado mayor es el máximo absoluto."
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. Derivamos y hallamos los puntos críticos:<br>\\[ f'(x) = \\frac{(1)(x^2 + 1) - (x)(2x)}{(x^2 + 1)^2} = \\frac{1 - x^2}{(x^2 + 1)^2} \\]<br>Igualando a cero: \\( 1 - x^2 = 0 \\implies x = 1, x = -1 \\).<br>El único punto crítico en \\( [0, 2] \\) es \\( x = 1 \\).<br>2. Evaluamos en la función original:<br>- En \\( x = 0 \\): \\( f(0) = 0 / 1 = 0 \\)<br>- En \\( x = 1 \\): \\( f(1) = 1 / (1^2 + 1) = 1/2 = 0.5 \\)<br>- En \\( x = 2 \\): \\( f(2) = 2 / (2^2 + 1) = 2/5 = 0.4 \\)<br>3. Comparamos: 0, 0.5 y 0.4. El mayor es 0.5.<br>Respuesta: 1/2 o 0.5."
+        },
+        {
+            topic: "Extremos Absolutos (Funciones Irracionales)",
+            text: "Encuentra el <strong>mínimo absoluto</strong> (coordenada y) de \\( f(x) = x - \\sqrt{x} \\) en el intervalo \\( [0, 4] \\). <br><small><em>(Ingresa fracción simplificada o decimal)</em></small>",
+            answers: ["-1/4", "-0.25"],
+            hints: [
+                "Pista 1: Deriva: \\( f'(x) = 1 - \\frac{1}{2\\sqrt{x}} \\).",
+                "Pista 2: Iguala a cero y despeja: \\( 1 = \\frac{1}{2\\sqrt{x}} \\implies 2\\sqrt{x} = 1 \\implies \\sqrt{x} = 1/2 \\). Elva al cuadrado para hallar x.",
+                "Pista 3: El punto crítico es \\( x = 1/4 \\). Evalúa \\( f(0), f(1/4) \\) y \\( f(4) \\)."
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. Derivamos la función:<br>\\[ f'(x) = 1 - \\frac{1}{2}x^{-1/2} = 1 - \\frac{1}{2\\sqrt{x}} \\]<br>2. Hallamos el punto crítico:<br>\\[ 1 = \\frac{1}{2\\sqrt{x}} \\implies 2\\sqrt{x} = 1 \\implies \\sqrt{x} = \\frac{1}{2} \\implies x = \\frac{1}{4} \\]<br>3. Evaluamos la función original en extremos y puntos críticos:<br>- En \\( x = 0 \\): \\( f(0) = 0 - 0 = 0 \\)<br>- En \\( x = 1/4 \\): \\( f(1/4) = \\frac{1}{4} - \\sqrt{\\frac{1}{4}} = \\frac{1}{4} - \\frac{1}{2} = -\\frac{1}{4} \\)<br>- En \\( x = 4 \\): \\( f(4) = 4 - \\sqrt{4} = 4 - 2 = 2 \\)<br>4. El valor más pequeño es -1/4.<br>Respuesta: -1/4 o -0.25."
+        },
+        {
+            topic: "Extremos Absolutos (Funciones Exponenciales)",
+            text: "El valor máximo absoluto de la función \\( f(x) = x e^{-x} \\) en el intervalo \\( [0, 2] \\) se puede escribir como \\( 1/e^k \\). ¿Cuál es el valor numérico exacto de <strong>\\( k \\)</strong>?",
+            answers: ["1"],
+            hints: [
+                "Pista 1: Deriva con regla del producto: \\( f'(x) = e^{-x}(1 - x) \\).",
+                "Pista 2: El punto crítico es \\( x = 1 \\).",
+                "Pista 3: Evalúa \\( f(0) = 0 \\), \\( f(1) = 1/e \\), y \\( f(2) = 2/e^2 \\). El mayor de esos es \\( 1/e \\)."
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. Derivamos usando regla del producto:<br>\\[ f'(x) = (1)e^{-x} + x(-e^{-x}) = e^{-x}(1 - x) \\]<br>2. Punto crítico al igualar a cero: \\( 1 - x = 0 \\implies x = 1 \\).<br>3. Evaluamos en \\( f(x) \\):<br>- En \\( x = 0 \\): \\( f(0) = 0 \\cdot e^0 = 0 \\)<br>- En \\( x = 1 \\): \\( f(1) = 1 \\cdot e^{-1} = \\frac{1}{e} \\)<br>- En \\( x = 2 \\): \\( f(2) = 2 \\cdot e^{-2} = \\frac{2}{e^2} \\)<br>4. Comparamos: \\( \\frac{1}{e} \\approx 0.367 \\) y \\( \\frac{2}{e^2} \\approx 0.270 \\). El máximo absoluto es \\( 1/e \\).<br>Comparando con el formato \\( 1/e^k \\), concluimos que \\( k = 1 \\)."
+        },
+        {
+            topic: "Extremos Absolutos (Trigonométrica)",
+            text: "Halla el <strong>valor mínimo absoluto</strong> (coordenada y) de \\( f(x) = \\sin(x) + \\cos(x) \\) en el intervalo cerrado \\( [0, \\pi] \\).",
+            answers: ["-1"],
+            hints: [
+                "Pista 1: El punto crítico está donde \\( f'(x) = \\cos(x) - \\sin(x) = 0 \\), que ocurre en \\( x = \\pi/4 \\).",
+                "Pista 2: Evalúa la función en los extremos \\( 0 \\) y \\( \\pi \\), y en el punto crítico \\( \\pi/4 \\).",
+                "Pista 3: \\( f(0) = 1 \\). \\( f(\\pi/4) = \\sqrt{2} \\). \\( f(\\pi) = -1 \\). El menor es tu respuesta."
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. Derivamos: \\( f'(x) = \\cos(x) - \\sin(x) \\).<br>2. Igualamos a cero para hallar el punto crítico en \\( [0, \\pi] \\):<br>\\[ \\cos(x) = \\sin(x) \\implies \\tan(x) = 1 \\implies x = \\frac{\\pi}{4} \\]<br>3. Evaluamos la función original en esos puntos:<br>- \\( f(0) = \\sin(0) + \\cos(0) = 0 + 1 = 1 \\)<br>- \\( f(\\pi/4) = \\sin(\\pi/4) + \\cos(\\pi/4) = \\frac{\\sqrt{2}}{2} + \\frac{\\sqrt{2}}{2} = \\sqrt{2} \\approx 1.41 \\)<br>- \\( f(\\pi) = \\sin(\\pi) + \\cos(\\pi) = 0 - 1 = -1 \\)<br>4. El valor más pequeño de todos es -1.<br>Respuesta: -1."
+        },
+        {
+            topic: "Extremos Absolutos (Valor Absoluto)",
+            text: "Encuentra el <strong>máximo absoluto</strong> de la función \\( f(x) = |x - 2| + 1 \\) en el intervalo cerrado \\( [0, 5] \\).",
+            answers: ["4"],
+            hints: [
+                "Pista 1: Los puntos críticos también incluyen los puntos donde la derivada no existe. El valor absoluto hace un pico en \\( x = 2 \\).",
+                "Pista 2: Evalúa la función en los extremos del intervalo y en el pico: \\( f(0), f(2), f(5) \\).",
+                "Pista 3: \\( f(0) = | -2 | + 1 = 3 \\). \\( f(2) = 1 \\). \\( f(5) = | 3 | + 1 = 4 \\)."
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. Analizamos la función. Tiene un punto de quiebre (donde la derivada no está definida) en el argumento del valor absoluto: \\( x - 2 = 0 \\implies x = 2 \\). Este es nuestro punto crítico.<br>2. Evaluamos la función en los extremos y en el punto de quiebre:<br>- En \\( x = 0 \\): \\( f(0) = |0 - 2| + 1 = |-2| + 1 = 2 + 1 = 3 \\)<br>- En \\( x = 2 \\): \\( f(2) = |2 - 2| + 1 = 0 + 1 = 1 \\)<br>- En \\( x = 5 \\): \\( f(5) = |5 - 2| + 1 = |3| + 1 = 3 + 1 = 4 \\)<br>3. El valor más alto de la función en este intervalo es 4.<br>Respuesta: 4."
+        },
+        {
+            topic: "Optimización y Extremos Absolutos (Beneficio)",
+            text: "Una empresa modela sus beneficios semanales en miles de dólares con la función \\( P(x) = -x^3 + 9x^2 - 15x \\) donde \\( x \\) es la cantidad producida en miles de unidades, en el intervalo \\( [0, 6] \\). ¿Cuál es el <strong>beneficio máximo absoluto</strong> que puede alcanzar?",
+            answers: ["25"],
+            hints: [
+                "Pista 1: Halla la derivada \\( P'(x) = -3x^2 + 18x - 15 \\) e iguala a cero.",
+                "Pista 2: Saca factor común -3: \\( -3(x^2 - 6x + 5) = 0 \\). Factoriza y halla los puntos críticos (1 y 5).",
+                "Pista 3: Evalúa \\( P(0), P(1), P(5), P(6) \\). El valor numérico de \\( P(5) \\) será tu máximo."
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. Derivamos para buscar máximos locales:<br>\\[ P'(x) = -3x^2 + 18x - 15 \\]<br>2. Igualamos a cero y factorizamos:<br>\\[ -3(x^2 - 6x + 5) = 0 \\implies (x - 1)(x - 5) = 0 \\]<br>Puntos críticos en \\( x = 1 \\) y \\( x = 5 \\).<br>3. Evaluamos la función beneficio en los puntos críticos y extremos (0 y 6):<br>- \\( P(0) = 0 \\)<br>- \\( P(1) = -(1) + 9(1) - 15(1) = -7 \\)<br>- \\( P(5) = -(125) + 9(25) - 15(5) = -125 + 225 - 75 = 25 \\)<br>- \\( P(6) = -(216) + 9(36) - 15(6) = -216 + 324 - 90 = 18 \\)<br>4. El mayor beneficio ocurre en \\( x=5 \\) con un valor de 25.<br>Respuesta: 25."
+        },
+        {
+            topic: "Extremos Absolutos (Constante Oculta)",
+            text: "La función \\( f(x) = kx - x^2 \\) alcanza un valor máximo absoluto de 9 en el intervalo \\( [-1, 5] \\). Si \\( k \\) es una constante positiva, ¿cuál es el valor exacto de <strong>\\( k \\)</strong>?",
+            answers: ["6"],
+            hints: [
+                "Pista 1: Deriva e iguala a cero para hallar el punto crítico en términos de k: \\( f'(x) = k - 2x = 0 \\implies x = k/2 \\).",
+                "Pista 2: Como es una parábola que abre hacia abajo, el máximo estará en su vértice \\( x = k/2 \\) asumiendo que cae en el intervalo.",
+                "Pista 3: Evalúa \\( f(k/2) \\). Obtendrás \\( k(k/2) - (k/2)^2 = k^2/4 \\). Iguala eso a 9 y despeja \\( k \\)."
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. Hallamos el vértice (punto crítico) de la parábola:<br>\\[ f'(x) = k - 2x = 0 \\implies x = \\frac{k}{2} \\]<br>2. Evaluamos la función en ese punto crítico, ya que por ser parábola invertida allí está su máximo:<br>\\[ f(k/2) = k\\left(\\frac{k}{2}\\right) - \\left(\\frac{k}{2}\\right)^2 = \\frac{k^2}{2} - \\frac{k^2}{4} = \\frac{k^2}{4} \\]<br>3. Sabemos que ese máximo vale 9:<br>\\[ \\frac{k^2}{4} = 9 \\implies k^2 = 36 \\]<br>4. Como el enunciado dice que \\( k \\) es positivo:<br>\\[ k = 6 \\]<br>*(Verificación: Si \\( k=6 \\), el punto crítico es \\( x=3 \\), que pertenece al intervalo \\( [-1, 5] \\), por lo que todo es correcto).* "
+        },
+
+        // --- CONCAVIDAD E INFLEXIÓN ---
+        {
+            topic: "Punto de Inflexión (Polinomio Cúbico)",
+            text: "Dada la función \\( f(x) = 2x^3 - 6x^2 + 5x - 1 \\). Encuentra la coordenada \\( x \\) de su <strong>punto de inflexión</strong>.",
+            answers: ["1"],
+            hints: [
+                "Pista 1: El punto de inflexión ocurre cuando la segunda derivada es cero y cambia de signo.",
+                "Pista 2: Primera derivada: \\( f'(x) = 6x^2 - 12x + 5 \\).",
+                "Pista 3: Segunda derivada: \\( f''(x) = 12x - 12 \\). Iguala a cero y despeja \\( x \\)."
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. Calculamos la primera derivada:<br>\\[ f'(x) = 6x^2 - 12x + 5 \\]<br>2. Calculamos la segunda derivada:<br>\\[ f''(x) = 12x - 12 \\]<br>3. Igualamos la segunda derivada a cero para hallar el candidato a punto de inflexión:<br>\\[ 12x - 12 = 0 \\implies 12x = 12 \\implies x = 1 \\]<br>4. Comprobamos el cambio de signo: si \\( x < 1 \\) (ej. 0), \\( f''(0) = -12 \\) (cóncava hacia abajo). Si \\( x > 1 \\) (ej. 2), \\( f''(2) = 12 \\) (cóncava hacia arriba). Por tanto, en \\( x = 1 \\) hay un punto de inflexión."
+        },
+        {
+            topic: "Múltiples Puntos de Inflexión",
+            text: "La función \\( f(x) = x^4 - 6x^3 + 12x^2 - x + 1 \\) posee dos puntos de inflexión. Calcula la <strong>suma</strong> de las coordenadas \\( x \\) de ambos puntos.",
+            answers: ["3"],
+            hints: [
+                "Pista 1: Halla la segunda derivada. La primera es \\( 4x^3 - 18x^2 + 24x - 1 \\).",
+                "Pista 2: La segunda es \\( 12x^2 - 36x + 24 \\). Iguala a cero y divide entre 12 para simplificar.",
+                "Pista 3: Te queda \\( x^2 - 3x + 2 = 0 \\). Las raíces son 1 y 2. Súmalas."
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. Calculamos la primera derivada:<br>\\[ f'(x) = 4x^3 - 18x^2 + 24x - 1 \\]<br>2. Calculamos la segunda derivada:<br>\\[ f''(x) = 12x^2 - 36x + 24 \\]<br>3. Buscamos los puntos de inflexión igualando a cero:<br>\\[ 12(x^2 - 3x + 2) = 0 \\]<br>\\[ x^2 - 3x + 2 = 0 \\implies (x - 1)(x - 2) = 0 \\]<br>Los puntos de inflexión están en \\( x = 1 \\) y \\( x = 2 \\).<br>4. Se nos pide la suma de estas coordenadas:<br>\\[ 1 + 2 = 3 \\]"
+        },
+        {
+            topic: "Intervalos de Concavidad (Polinómica)",
+            text: "Dada la función \\( f(x) = x^3 - 3x^2 + x \\). Ésta es cóncava hacia arriba en el intervalo \\( (c, \\infty) \\). ¿Cuál es el <strong>menor número entero</strong> en el cual la función es estrictamente cóncava hacia arriba?",
+            answers: ["2"],
+            hints: [
+                "Pista 1: Una función es cóncava hacia arriba donde \\( f''(x) > 0 \\).",
+                "Pista 2: Halla la segunda derivada: \\( f''(x) = 6x - 6 \\). Plantea la inecuación \\( 6x - 6 > 0 \\).",
+                "Pista 3: Resolviendo obtienes \\( x > 1 \\). Como se pide un número entero estricto mayor que 1, la respuesta es 2."
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. Hallamos la segunda derivada:<br>\\[ f'(x) = 3x^2 - 6x + 1 \\]<br>\\[ f''(x) = 6x - 6 \\]<br>2. Planteamos la condición para que sea cóncava hacia arriba:\\( f''(x) > 0 \\)<br>\\[ 6x - 6 > 0 \\implies 6x > 6 \\implies x > 1 \\]<br>3. El intervalo de concavidad hacia arriba es \\( (1, \\infty) \\).<br>4. Se pide el menor número entero en este intervalo. Dado que 1 no está incluido por ser un intervalo abierto, el siguiente entero es 2.<br>Respuesta: 2."
+        },
+        {
+            topic: "Intervalos de Concavidad Hacia Abajo",
+            text: "La función \\( f(x) = -x^4 + 2x^3 \\) tiene dos puntos de inflexión. En el intervalo entre esos dos puntos, la función es cóncava hacia arriba. ¿Cuál es la <strong>suma</strong> de las coordenadas \\( x \\) de los puntos de inflexión que delimitan esa zona?",
+            answers: ["1"],
+            hints: [
+                "Pista 1: Calcula la primera derivada: \\( -4x^3 + 6x^2 \\).",
+                "Pista 2: Calcula la segunda derivada: \\( -12x^2 + 12x \\).",
+                "Pista 3: Iguala a cero y saca factor común: \\( -12x(x - 1) = 0 \\). Las raíces son 0 y 1. La suma de ambas es la respuesta."
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. Calculamos las derivadas:<br>\\[ f'(x) = -4x^3 + 6x^2 \\]<br>\\[ f''(x) = -12x^2 + 12x \\]<br>2. Igualamos la segunda derivada a cero para encontrar las fronteras de concavidad:<br>\\[ -12x^2 + 12x = 0 \\implies -12x(x - 1) = 0 \\]<br>3. Los puntos de inflexión están en \\( x = 0 \\) y \\( x = 1 \\). <br>*(Entre 0 y 1, por ejemplo en 0.5, la segunda derivada vale -12(0.25)+12(0.5) = -3+6 = 3 > 0, así que es cóncava hacia arriba).*<br>4. La suma de las coordenadas de inflexión es \\( 0 + 1 = 1 \\)."
+        },
+        {
+            topic: "Punto de Inflexión (Función Exponencial/Gaussiana)",
+            text: "La campana de Gauss \\( f(x) = e^{-x^2} \\) tiene dos puntos de inflexión. La coordenada \\( x \\) positiva de uno de ellos tiene la forma \\( x = \\frac{1}{\\sqrt{k}} \\). ¿Cuál es el valor numérico exacto de <strong>\\( k \\)</strong>?",
+            answers: ["2"],
+            hints: [
+                "Pista 1: Deriva usando la regla de la cadena: \\( f'(x) = -2x e^{-x^2} \\).",
+                "Pista 2: Usa la regla del producto para la segunda derivada: \\( f''(x) = -2 e^{-x^2} + (-2x)(-2x e^{-x^2}) \\).",
+                "Pista 3: Factoriza \\( e^{-x^2} \\). Te quedará \\( e^{-x^2}(4x^2 - 2) = 0 \\). Despeja \\( x \\)."
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. Primera derivada (regla de la cadena):<br>\\[ f'(x) = e^{-x^2} \\cdot \\frac{d}{dx}(-x^2) = -2x e^{-x^2} \\]<br>2. Segunda derivada (regla del producto):<br>\\[ f''(x) = \\frac{d}{dx}(-2x) \\cdot e^{-x^2} + (-2x) \\cdot \\frac{d}{dx}(e^{-x^2}) \\]<br>\\[ f''(x) = -2e^{-x^2} + (-2x)(-2x e^{-x^2}) = e^{-x^2}(-2 + 4x^2) \\]<br>3. Igualamos a cero. Como la exponencial nunca es nula, igualamos el paréntesis:<br>\\[ 4x^2 - 2 = 0 \\implies 4x^2 = 2 \\implies x^2 = \\frac{1}{2} \\]<br>4. Despejamos \\( x \\) tomando la raíz positiva:<br>\\[ x = \\frac{1}{\\sqrt{2}} \\]<br>Comparando con \\( \\frac{1}{\\sqrt{k}} \\), deducimos que \\( k = 2 \\)."
+        },
+        {
+            topic: "Punto de Inflexión (Función Logarítmica)",
+            text: "Considera la función \\( f(x) = x^2 \\ln(x) \\) definida para \\( x > 0 \\). Su punto de inflexión se encuentra en la coordenada \\( x = e^k \\). Encuentra el valor exacto de la constante <strong>\\( k \\)</strong>. <br><small><em>(Ingresa fracción simplificada o decimal)</em></small>",
+            answers: ["-3/2", "-1.5"],
+            hints: [
+                "Pista 1: Deriva con regla del producto: \\( f'(x) = 2x\\ln(x) + x^2(1/x) = 2x\\ln(x) + x \\).",
+                "Pista 2: Deriva de nuevo: \\( f''(x) = 2\\ln(x) + 2x(1/x) + 1 = 2\\ln(x) + 3 \\).",
+                "Pista 3: Iguala a cero: \\( 2\\ln(x) + 3 = 0 \\). Despeja \\( \\ln(x) \\) y luego pasa a forma exponencial."
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. Primera derivada (producto):<br>\\[ f'(x) = 2x\\ln(x) + x^2\\left(\\frac{1}{x}\\right) = 2x\\ln(x) + x \\]<br>2. Segunda derivada (producto de nuevo):<br>\\[ f''(x) = \\left(2\\ln(x) + 2x\\frac{1}{x}\\right) + 1 = 2\\ln(x) + 2 + 1 = 2\\ln(x) + 3 \\]<br>3. Puntos de inflexión (igualando a cero):<br>\\[ 2\\ln(x) + 3 = 0 \\implies 2\\ln(x) = -3 \\implies \\ln(x) = -\\frac{3}{2} \\]<br>4. Transformamos a forma exponencial:<br>\\[ x = e^{-3/2} \\]<br>Comparando con \\( x = e^k \\), concluimos que \\( k = -3/2 \\) o -1.5."
+        },
+        {
+            topic: "Punto de Inflexión (Función Racional)",
+            text: "Dada la función \\( f(x) = \\frac{x}{x^2 + 3} \\). Esta función tiene 3 puntos de inflexión. ¿Cuál es el valor exacto de su <strong>punto de inflexión estrictamente positivo</strong>?",
+            answers: ["3"],
+            hints: [
+                "Pista 1: Primera derivada por regla del cociente: \\( f'(x) = \\frac{3 - x^2}{(x^2 + 3)^2} \\).",
+                "Pista 2: Segunda derivada por cociente: \\( f''(x) = \\frac{2x(x^2 - 9)}{(x^2 + 3)^3} \\) (requiere simplificación cuidadosa).",
+                "Pista 3: Iguala el numerador a cero: \\( 2x(x^2 - 9) = 0 \\). Las raíces son 0, 3 y -3. Se pide la estrictamente positiva."
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. Primera derivada:<br>\\[ f'(x) = \\frac{1(x^2+3) - x(2x)}{(x^2+3)^2} = \\frac{3 - x^2}{(x^2+3)^2} \\]<br>2. Segunda derivada:<br>\\[ f''(x) = \\frac{-2x(x^2+3)^2 - (3-x^2)2(x^2+3)(2x)}{(x^2+3)^4} \\]<br>Factorizamos \\( (x^2+3) \\) en el numerador y simplificamos:<br>\\[ f''(x) = \\frac{-2x(x^2+3) - 4x(3-x^2)}{(x^2+3)^3} = \\frac{-2x^3 - 6x - 12x + 4x^3}{(x^2+3)^3} \\]<br>\\[ f''(x) = \\frac{2x^3 - 18x}{(x^2+3)^3} = \\frac{2x(x^2 - 9)}{(x^2+3)^3} \\]<br>3. Puntos de inflexión (numerador = 0):<br>\\[ 2x(x - 3)(x + 3) = 0 \\implies x = 0, \\ x = 3, \\ x = -3 \\]<br>4. Se solicita el punto estrictamente positivo, el cual es 3."
+        },
+        {
+            topic: "Concavidad (Trigonométrica)",
+            text: "La función \\( f(x) = \\sin(x) \\) cambia de concavidad múltiples veces. En el intervalo abierto \\( (0, 2\\pi) \\), ¿en qué valor exacto de \\( x \\) ocurre su punto de inflexión? <br><small><em>(Ingresa tu respuesta usando 'pi')</em></small>",
+            answers: ["pi"],
+            hints: [
+                "Pista 1: La primera derivada es \\( \\cos(x) \\). La segunda derivada es \\( -\\sin(x) \\).",
+                "Pista 2: Iguala a cero: \\( -\\sin(x) = 0 \\).",
+                "Pista 3: Busca el ángulo en el intervalo \\( (0, 2\\pi) \\) donde el seno se anule (corte el eje x)."
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. Hallamos la segunda derivada para estudiar la concavidad:<br>\\[ f'(x) = \\cos(x) \\]<br>\\[ f''(x) = -\\sin(x) \\]<br>2. Igualamos a cero para buscar puntos de inflexión:<br>\\[ -\\sin(x) = 0 \\implies \\sin(x) = 0 \\]<br>3. El seno es cero en los ángulos \\( 0, \\pi, 2\\pi, 3\\pi, \\dots \\)<br>4. Como el problema restringe al intervalo abierto \\( (0, 2\\pi) \\), el único valor es \\( \\pi \\). <br>*(Antes de \\( \\pi \\), la gráfica es cóncava hacia abajo; después de \\( \\pi \\), es cóncava hacia arriba).*<br>Respuesta: pi."
+        },
+        {
+            topic: "Inferencia de Constantes desde la Inflexión",
+            text: "Dada la función polinómica \\( f(x) = ax^3 + bx^2 \\). Se sabe que tiene un punto de inflexión exactamente en \\( x = 2 \\). Si sabemos que el valor del parámetro \\( a = 1 \\), ¿cuál es el valor exacto de la constante <strong>\\( b \\)</strong>?",
+            answers: ["-6"],
+            hints: [
+                "Pista 1: Sustituye a=1. La función es \\( f(x) = x^3 + bx^2 \\).",
+                "Pista 2: Deriva dos veces: \\( f''(x) = 6x + 2b \\).",
+                "Pista 3: Como hay un punto de inflexión en \\( x = 2 \\), evalúa la segunda derivada allí e iguala a cero: \\( 6(2) + 2b = 0 \\). Despeja \\( b \\)."
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. Incorporamos el dato \\( a = 1 \\) a la función:<br>\\[ f(x) = x^3 + bx^2 \\]<br>2. Calculamos hasta la segunda derivada:<br>\\[ f'(x) = 3x^2 + 2bx \\]<br>\\[ f''(x) = 6x + 2b \\]<br>3. Un punto de inflexión en \\( x = 2 \\) significa que \\( f''(2) = 0 \\) (asumiendo cambio de signo). Planteamos la ecuación:<br>\\[ 6(2) + 2b = 0 \\]<br>\\[ 12 + 2b = 0 \\]<br>\\[ 2b = -12 \\implies b = -6 \\]"
+        },
+        {
+            topic: "Concavidad Positiva Permanente (Condición)",
+            text: "Considera la función \\( f(x) = x^4 + kx^2 \\). Queremos que esta función sea <strong>cóncava hacia arriba en todo su dominio real</strong> (\\( \\mathbb{R} \\)). ¿Cuál es el <strong>menor valor numérico entero no negativo</strong> (es decir, de 0 en adelante) que puede tomar el parámetro \\( k \\)?",
+            answers: ["0"],
+            hints: [
+                "Pista 1: Que sea cóncava hacia arriba en todo \\( \\mathbb{R} \\) significa que \\( f''(x) \\geq 0 \\) para cualquier valor de \\( x \\).",
+                "Pista 2: Calcula la segunda derivada: \\( f''(x) = 12x^2 + 2k \\).",
+                "Pista 3: Sabemos que \\( 12x^2 \\) siempre es mayor o igual a cero. Para que toda la suma sea siempre positiva, \\( 2k \\) no puede ser negativo. Por tanto \\( k \\geq 0 \\). ¿Cuál es el entero más pequeño?"
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. Calculamos la segunda derivada:<br>\\[ f'(x) = 4x^3 + 2kx \\]<br>\\[ f''(x) = 12x^2 + 2k \\]<br>2. Planteamos la condición de concavidad hacia arriba en \\( \\mathbb{R} \\):<br>\\[ 12x^2 + 2k \\geq 0 \\quad \\text{para todo } x \\]<br>3. Dado que \\( x^2 \\geq 0 \\), el término \\( 12x^2 \\) siempre será positivo o cero. El punto más crítico es cuando \\( x = 0 \\), donde la expresión vale \\( 2k \\).<br>4. Por lo tanto, para garantizar que la suma no sea negativa, exigimos:<br>\\[ 2k \\geq 0 \\implies k \\geq 0 \\]<br>5. El menor entero no negativo que cumple esto es el 0."
+        },
+        {
+            topic: "Análisis de Gráficas por Derivadas",
+            text: "Una función \\( f(x) \\) tiene por segunda derivada a \\( f''(x) = x^2(x - 3) \\). Esta función tiene un único punto de inflexión. ¿En qué coordenada \\( x \\) se encuentra?",
+            answers: ["3"],
+            hints: [
+                "Pista 1: Los candidatos a puntos de inflexión son los valores donde \\( f''(x) = 0 \\). Estos son \\( x = 0 \\) y \\( x = 3 \\).",
+                "Pista 2: Un punto de inflexión verdadero requiere que la segunda derivada CAMBIE DE SIGNO al pasar por él.",
+                "Pista 3: En \\( x = 0 \\), el término \\( x^2 \\) hace que no haya cambio de signo (positivo a la izquierda y a la derecha). En \\( x = 3 \\), el término lineal \\( (x-3) \\) sí provoca un cambio de signo (de menos a más)."
+            ],
+            solution: "<strong>Procedimiento:</strong><br>1. Ya nos dan la segunda derivada factorizada:<br>\\[ f''(x) = x^2(x - 3) \\]<br>2. Hallamos los ceros de la segunda derivada (candidatos):<br>\\[ x^2 = 0 \\implies x = 0 \\]<br>\\[ x - 3 = 0 \\implies x = 3 \\]<br>3. Verificamos el cambio de signo (concavidad):<br>- Para \\( x < 0 \\) (ej. -1): \\( (-1)^2(-1-3) = 1(-4) = -4 \\) (Cóncava hacia abajo)<br>- Para \\( 0 < x < 3 \\) (ej. 1): \\( (1)^2(1-3) = 1(-2) = -2 \\) (Cóncava hacia abajo)<br>- Para \\( x > 3 \\) (ej. 4): \\( (4)^2(4-3) = 16(1) = 16 \\) (Cóncava hacia arriba)<br>4. Como en \\( x = 0 \\) no hay cambio de signo, NO es punto de inflexión. El único cambio ocurre en \\( x = 3 \\)."
+        }
+    ];
+
+    let currentQIndex = 0;
+    let hintIndex = 0;
+
+    function initApp() {
+        currentQIndex = 0;
+        displayQuestion();
+    }
+
+    function displayQuestion() {
+        const q = questions[currentQIndex];
+        document.getElementById('topic-badge').innerText = q.topic;
+        document.getElementById('question-text').innerHTML = q.text;
+        
+        document.getElementById('student-answer').value = '';
+        document.getElementById('feedback-area').style.display = 'none';
+        document.getElementById('hint-area').style.display = 'none';
+        document.getElementById('solution-area').style.display = 'none';
+        hintIndex = 0;
+        
+        if (window.MathJax) {
+            MathJax.typesetPromise();
+        }
+    }
+
+    function checkAnswer() {
+        const studentAnsRaw = document.getElementById('student-answer').value;
+        const studentAnsClean = studentAnsRaw.toLowerCase().replace(/\s/g, '');
+        const q = questions[currentQIndex];
+        const feedback = document.getElementById('feedback-area');
+        
+        if(studentAnsClean === '') {
+            feedback.innerHTML = "Por favor, ingresa una respuesta antes de comprobar.";
+            feedback.className = "math-feedback feedback-incorrect";
+            feedback.style.display = 'block';
+            return;
+        }
+
+        let isCorrect = false;
+        for(let i=0; i < q.answers.length; i++) {
+            if(studentAnsClean === q.answers[i]) {
+                isCorrect = true;
+                break;
+            }
+        }
+
+        if (isCorrect) {
+            feedback.innerHTML = "<strong>¡Excelente análisis!</strong> Tu respuesta es completamente correcta.";
+            feedback.className = "math-feedback feedback-correct";
+        } else {
+            feedback.innerHTML = `<strong>Respuesta incorrecta.</strong> Te sugiero repasar los fundamentos del tópico: <em>${q.topic}</em>. Utiliza el botón de pistas para guiarte en el procedimiento.`;
+            feedback.className = "math-feedback feedback-incorrect";
+        }
+        feedback.style.display = 'block';
+    }
+
+    function showHint() {
+        const q = questions[currentQIndex];
+        const hintBox = document.getElementById('hint-area');
+        
+        if (hintIndex < q.hints.length) {
+            let currentHintsHTML = "";
+            for(let i=0; i<=hintIndex; i++){
+                currentHintsHTML += "<p>" + q.hints[i] + "</p>";
+            }
+            hintBox.innerHTML = currentHintsHTML;
+            hintBox.style.display = 'block';
+            hintIndex++;
+            
+            if (window.MathJax) {
+                MathJax.typesetPromise();
+            }
+        } else {
+            hintBox.innerHTML += "<p><em>No hay más pistas. Revisa el procedimiento paso a paso para verificar dónde ocurrió el error.</em></p>";
+        }
+    }
+
+    function showSolution() {
+        const solutionBox = document.getElementById('solution-area');
+        const q = questions[currentQIndex];
+        solutionBox.innerHTML = q.solution;
+        solutionBox.style.display = 'block';
+        
+        if (window.MathJax) {
+            MathJax.typesetPromise();
+        }
+    }
+
+    function loadNextQuestion() {
+        currentQIndex++;
+        if (currentQIndex >= questions.length) {
+            currentQIndex = 0; 
+        }
+        displayQuestion();
+    }
+
+    setTimeout(initApp, 500);
+</script>
